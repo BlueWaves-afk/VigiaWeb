@@ -5,8 +5,10 @@ import SonicDemo from "@/components/SonicDemo";
 import FeatureRows from "@/components/FeatureRows";
 import CodeDemo from "@/components/CodeDemo";
 import SiteFooter from "@/components/SiteFooter";
+import DeveloperSection from "@/components/DeveloperSection";
+import ArgusShowcaseSection from "@/components/ArgusShowcaseSection";
 
-export const metadata = { title: "VIGIA – Sonic Copilot" };
+export const metadata = { title: "VIGIA WEB" };
 
 export default function Home() {
   return (
@@ -15,14 +17,16 @@ export default function Home() {
       <BackgroundFX />
       <TopBar />
 
-      {/* Your existing hero */}
       <div className="pt-20">
         <SonicHero />
       </div>
 
-      {/* ✅ New interactive demo section */}
       <SonicDemo />
 
+      {/* Argus demo (client-only via the wrapper) */}
+      <ArgusShowcaseSection />
+
+      <DeveloperSection />
       <FeatureRows />
       <CodeDemo />
       <SiteFooter />

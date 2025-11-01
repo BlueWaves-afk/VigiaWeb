@@ -1,5 +1,6 @@
 {
   "dependencies": {
-    "@mlc-ai/web-llm": "^0.2.79"
+    "@mlc-ai/web-llm": "^0.2.79",
+    "framer-motion": "^12.23.24"
   }
 }

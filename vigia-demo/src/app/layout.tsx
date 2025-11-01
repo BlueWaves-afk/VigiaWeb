@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "VIGIA",
-  description: "Real-time Sonic Intelligence on the edge",
+  description: "Real-time Road Intelligence on the edge",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -11,6 +11,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       {/* No TopBar here */}
       <body className="bg-slate-950 text-white antialiased">{children}</body>
+      
+      
     </html>
   );
 }

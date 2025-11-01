@@ -9,11 +9,16 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@tensorflow/tfjs": "^4.22.0",
+    "@tensorflow/tfjs-backend-cpu": "^4.22.0",
+    "@tensorflow/tfjs-backend-webgl": "^4.22.0",
+    "@tensorflow/tfjs-tflite": "^0.0.1-alpha.10",
     "@turf/turf": "^7.2.0",
     "chart.js": "^4.5.1",
     "clsx": "^2.1.1",
     "framer-motion": "^12.23.24",
     "h3-js": "^4.3.0",
+    "lucide-react": "^0.552.0",
     "maplibre-gl": "^5.10.0",
     "next": "16.0.1",
     "react": "19.2.0",
