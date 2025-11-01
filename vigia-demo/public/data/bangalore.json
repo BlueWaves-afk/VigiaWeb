@@ -1,0 +1,14 @@
+{
+  "892a7a2d6c3ffff": [
+    {"class":"pothole","lat":12.9722,"lng":77.5950,"severity":0.72,"last_seen":"2025-10-20","weather":["rain"],"count":8}
+  ],
+  "892a7a2d6cbffff": [
+    {"class":"speed_breaker_unmarked","lat":12.9700,"lng":77.6000,"severity":0.64,"last_seen":"2025-10-25","weather":[],"count":5}
+  ],
+  "892a7a2d6c7ffff": [
+    {"class":"debris","lat":12.9755,"lng":77.6030,"severity":0.58,"last_seen":"2025-10-28","weather":[],"count":2}
+  ],
+  "892a7a2d6cfffff": [
+    {"class":"stalled_vehicle","lat":12.9688,"lng":77.5922,"severity":0.70,"last_seen":"2025-10-26","weather":["rain"],"count":4}
+  ]
+}
