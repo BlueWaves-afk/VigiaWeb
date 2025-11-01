@@ -1,5 +1,0 @@
-{
-  "version": 2,
-  "builds": [{ "src": "vigia-demo/package.json", "use": "@vercel/next" }],
-  "projects": { }
-}
