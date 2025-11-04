@@ -48,10 +48,6 @@ body{ background:var(--surface); color:var(--ink); }
   background-position: center, center, -1px -1px, -1px -1px;
 }
 
-.card-glass {
-  @apply bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl;
-}
-
 .shimmer:before{
   content:"";
   position:absolute; inset:0;
@@ -59,5 +55,21 @@ body{ background:var(--surface); color:var(--ink); }
   transform: translateX(-100%);
   animation: shimmer 2.5s infinite;
   border-radius: inherit;
+}
+/* subtle grid background (already used elsewhere in your app) */
+.bg-grid {
+  background-image:
+    radial-gradient(rgba(255,255,255,0.06) 1px, transparent 1px);
+  background-size: 16px 16px;
+  background-position: -1px -1px;
+}
+
+/* glass card */
+.card-glass {
+  border-radius: 1rem;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.05);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 8px 30px rgba(0,0,0,.25);
 }
 @keyframes shimmer { 100% { transform: translateX(100%); } }

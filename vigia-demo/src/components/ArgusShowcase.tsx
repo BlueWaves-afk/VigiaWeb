@@ -20,9 +20,16 @@ type ModelChoice = "yolov8" | "argusv8x" | "baseline";
 type BackendStatus = "loading" | "webgl" | "cpu" | "failed";
 
 export default function ArgusShowcase() {
+  // --- START FIX: Track all scripts individually ---
+  const [tfCoreReady, setTfCoreReady] = useState(false);
+  const [tfCpuReady, setTfCpuReady] = useState(false);
+  const [tfWebglReady, setTfWebglReady] = useState(false);
+  const [tfLiteReady, setTfLiteReady] = useState(false);
+  // --- END FIX ---
+
   const [scriptsReady, setScriptsReady] = useState(false);
   const [modelReady, setModelReady] = useState(false);
-  const [running, setRunning] = useState(false);            // ⬅️ new: simulation toggle
+  const [running, setRunning] = useState(false); // ⬅️ new: simulation toggle
   const [modelName, setModelName] = useState<ModelChoice>("yolov8");
   const [fps, setFps] = useState(0);
   const [lat, setLat] = useState(0);
@@ -40,9 +47,20 @@ export default function ArgusShowcase() {
 
   const clearError = () => setErrorMessage(null);
 
+  // --- START FIX: New effect to combine readiness ---
+  // This effect will run when any of the individual scripts load
+  useEffect(() => {
+    if (tfCoreReady && tfCpuReady && tfWebglReady && tfLiteReady) {
+      setScriptsReady(true);
+      console.log("✅ All TF scripts are ready.");
+    }
+  }, [tfCoreReady, tfCpuReady, tfWebglReady, tfLiteReady]);
+  // --- END FIX ---
+
+
   /** Load TFJS backend + TFLite + model (as before) */
   useEffect(() => {
-    if (!scriptsReady) return;
+    if (!scriptsReady) return; // This now waits for ALL scripts
 
     (async () => {
       clearError();
@@ -127,10 +145,11 @@ export default function ArgusShowcase() {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
       rafRef.current = null;
     };
-  }, [scriptsReady, modelName]);
+  }, [scriptsReady, modelName]); // This dependency is now correct
 
   /** Main render loop – now gated by `running` */
   useEffect(() => {
+    // ... (rest of this effect is unchanged)
     const tf = window.tf as any;
     const video = videoRef.current;
     const canvas = canvasRef.current;
@@ -274,6 +293,7 @@ export default function ArgusShowcase() {
   }, [scriptsReady, modelReady, backendStatus, running]);
 
   /** UI helpers */
+  // ... (getStatusText, getStatusColor, RunButton are unchanged)
   const getStatusText = () => {
     if (!scriptsReady) return "Loading runtime…";
     if (backendStatus === "failed") return "Backend failed - check console";
@@ -314,31 +334,45 @@ export default function ArgusShowcase() {
 
   return (
     <>
-      {/* Local UMD scripts */}
+      {/* --- START FIX: Update onReady handlers --- */}
       <Script
         src={`/vendor/tfjs/tf-core.min.js?v=${TFJS_VER}`}
         strategy="afterInteractive"
-        onReady={() => console.log("TF Core loaded")}
+        onReady={() => {
+          console.log("TF Core loaded");
+          setTfCoreReady(true);
+        }}
         onError={() => setErrorMessage("Failed to load TensorFlow Core")}
       />
       <Script
         src={`/vendor/tfjs/tf-backend-cpu.min.js?v=${TFJS_VER}`}
         strategy="afterInteractive"
-        onReady={() => console.log("CPU backend loaded")}
+        onReady={() => {
+          console.log("CPU backend loaded");
+          setTfCpuReady(true);
+        }}
         onError={() => setErrorMessage("Failed to load CPU backend")}
       />
       <Script
         src={`/vendor/tfjs/tf-backend-webgl.min.js?v=${TFJS_VER}`}
         strategy="afterInteractive"
-        onReady={() => console.log("WebGL backend loaded")}
+        onReady={() => {
+          console.log("WebGL backend loaded");
+          setTfWebglReady(true);
+        }}
         onError={() => setErrorMessage("Failed to load WebGL backend")}
       />
       <Script
         src={`/vendor/tflite/tf-tflite.min.js?v=${TFLITE_VER}`}
         strategy="afterInteractive"
-        onReady={() => setScriptsReady(true)}
+        onReady={() => {
+          console.log("TFLite loaded");
+          setTfLiteReady(true);
+        }}
         onError={() => setErrorMessage("Failed to load TFLite runtime")}
       />
+      {/* --- END FIX --- */}
+
 
       <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur">
         {errorMessage && (

@@ -4,27 +4,26 @@
 import { useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
-import { getSession, updateSession } from "@/lib/auth";
-import type { Session } from "@/lib/auth";
+// --- FIX: Import the hook and the new server action ---
+import { useProfile } from "@/hooks/useProfile";
+import { completeOnboarding } from "./actions";
+import type { Profile } from "@/hooks/useProfile";
+// ---------------------------------------------------
 
 type Step = 0 | 1 | 2;
-// ✅ tuple types (or use `as const`)
 const EASE_OUT: [number, number, number, number] = [0.16, 1, 0.3, 1];
-const EASE_IN:  [number, number, number, number] = [0.4, 0, 1, 1];
-// or:
-// const EASE_OUT = [0.16, 1, 0.3, 1] as const;
-// const EASE_IN  = [0.4, 0, 1, 1] as const;
+const EASE_IN: [number, number, number, number] = [0.4, 0, 1, 1];
 import type { Variants } from "framer-motion";
 
 const containerVariants: Variants = {
   initial: { opacity: 0, y: 16 },
-  enter:   { opacity: 1, y: 0, transition: { duration: 0.35, ease: EASE_OUT } },
+  enter: { opacity: 1, y: 0, transition: { duration: 0.35, ease: EASE_OUT } },
 };
 
 const stepVariants: Variants = {
   initial: (dir: number) => ({ opacity: 0, x: dir > 0 ? 40 : -40, scale: 0.98 }),
-  center:  { opacity: 1, x: 0, scale: 1, transition: { duration: 0.35, ease: EASE_OUT } },
-  exit:    (dir: number) => ({
+  center: { opacity: 1, x: 0, scale: 1, transition: { duration: 0.35, ease: EASE_OUT } },
+  exit: (dir: number) => ({
     opacity: 0,
     x: dir > 0 ? -40 : 40,
     scale: 0.98,
@@ -32,45 +31,79 @@ const stepVariants: Variants = {
   }),
 };
 
+// A simple loading component (you can replace this)
+function LoadingScreen() {
+  return (
+    <div className="relative min-h-screen overflow-hidden bg-slate-950 flex items-center justify-center">
+      <span className="text-white">Loading...</span>
+    </div>
+  );
+}
+
 export default function Onboarding() {
   const r = useRouter();
+  // --- FIX: Use the profile hook ---
+  const { profile, loading } = useProfile();
+  // -------------------------------
 
-  const [session, setSession] = useState<Session | null>(null);
-  const [ready, setReady] = useState(false);
   const [step, setStep] = useState<Step>(0);
   const [dir, setDir] = useState(1); // animation direction
+  const [isSubmitting, setIsSubmitting] = useState(false); // Prevent double-clicks
+  // --- ADDED: State to hold server errors ---
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  // ------------------------------------------
 
+  // --- FIX: Use useEffect to react to profile loading ---
   useEffect(() => {
-    const s = getSession();
-    if (!s) {
+    if (loading) {
+      return; // Still loading, do nothing
+    }
+    if (!profile) {
+      // Not loading, and no profile. Redirect to sign in.
       r.replace("/auth/signin");
       return;
     }
-    setSession(s);
-    setReady(true);
-  }, [r]);
+    if (profile.hasOnboarded) {
+      // User has already onboarded, send them to the dashboard.
+      r.replace("/dashboard");
+    }
+    // If loading is false, and we have a profile that hasn't onboarded,
+    // the component will render.
+  }, [profile, loading, r]);
+  // ----------------------------------------------------
 
-  const next = useCallback(() => {
-    if (!ready) return;
+  const next = useCallback(async () => {
+    // Clear previous errors when trying again
+    setErrorMessage(null);
+    if (isSubmitting) return; // Don't allow action while one is in progress
+
     if (step < 2) {
       setDir(1);
-      setStep((s) => ((s + 1) as Step));
+      setStep((s) => (s + 1) as Step);
       return;
     }
-    // finalize
-    const curr = getSession();
-    if (!curr) {
-      r.replace("/auth/signin");
-      return;
+    
+    // --- FIX: Final step, call the server action ---
+    setIsSubmitting(true);
+    try {
+      // The server action handles the redirect
+      await completeOnboarding();
+      // If the server action *doesn't* redirect (which it should),
+      // we'll be stuck. The redirect is the expected behavior.
+    } catch (error: any) {
+      console.error(error);
+      // --- UPDATED: Show error to user and fix typo ---
+      setErrorMessage(error.message || "An unknown error occurred.");
+      setIsSubmitting(false); // <-- FIX: Was 'False' (uppercase)
+      // ------------------------------------------------
     }
-    updateSession({ hasOnboarded: true });
-    r.replace("/dashboard");
-  }, [ready, step, r]);
+    // ---------------------------------------------
+  }, [step, isSubmitting]);
 
   const prev = useCallback(() => {
     if (step > 0) {
       setDir(-1);
-      setStep((s) => ((s - 1) as Step));
+      setStep((s) => (s - 1) as Step);
     }
   }, [step]);
 
@@ -78,16 +111,31 @@ export default function Onboarding() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "ArrowRight" || e.key.toLowerCase() === "d") next();
-      if (e.key === "ArrowLeft"  || e.key.toLowerCase() === "a") prev();
+      if (e.key === "ArrowLeft" || e.key.toLowerCase() === "a") prev();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [next, prev]);
 
-  if (!ready || !session) return null;
+  // --- FIX: Show loading screen until profile is loaded/checked ---
+  if (loading || !profile || profile.hasOnboarded) {
+    return <LoadingScreen />;
+  }
+  // ----------------------------------------------------------
 
-  const vgt = session.tokenBalance ?? 0;
-  const dc  = session.dataCredits ?? 0;
+  // Now we are sure we have a profile that needs onboarding
+    // profile shape can vary; try common property names with fallbacks and cast to any
+    const vgt =
+      (profile as any).tokenBalance ??
+      (profile as any).vgt ??
+      (profile as any).vgtBalance ??
+      (profile as any).token_balance ??
+      0;
+    const dc =
+      (profile as any).dataCredits ??
+      (profile as any).data_credits ??
+      (profile as any).dc ??
+      0;
 
   const steps: Array<React.ReactNode> = [
     (
@@ -208,6 +256,14 @@ export default function Onboarding() {
             </AnimatePresence>
           </div>
 
+          {/* --- ADDED: Error Message Display --- */}
+          {errorMessage && (
+            <div className="mt-4 text-center text-sm text-red-400">
+              {errorMessage}
+            </div>
+          )}
+          {/* ------------------------------------ */}
+
           {/* Actions */}
           <div className="mt-8 flex items-center justify-between">
             <button
@@ -223,18 +279,21 @@ export default function Onboarding() {
               whileTap={{ scale: 0.98 }}
               whileHover={{ y: -1 }}
               onClick={next}
-              className="group inline-flex items-center gap-2 rounded-xl bg-white px-5 py-2 font-medium text-slate-900 hover:bg-slate-100"
+              disabled={isSubmitting} // Disable button while submitting
+              className="group inline-flex items-center gap-2 rounded-xl bg-white px-5 py-2 font-medium text-slate-900 hover:bg-slate-100 disabled:opacity-50"
             >
-              {step < 2 ? "Next" : "Go to dashboard"}
-              <motion.span
-                aria-hidden
-                initial={{ x: 0 }}
-                animate={{ x: [0, 4, 0] }}
-                transition={{ repeat: Infinity, duration: 1.6, ease: "easeInOut" }}
-                className="inline-block"
-              >
-                →
-              </motion.span>
+              {isSubmitting ? "Saving..." : (step < 2 ? "Next" : "Go to dashboard")}
+              {!isSubmitting && (
+                <motion.span
+                  aria-hidden
+                  initial={{ x: 0 }}
+                  animate={{ x: [0, 4, 0] }}
+                  transition={{ repeat: Infinity, duration: 1.6, ease: "easeInOut" }}
+                  className="inline-block"
+                >
+                  →
+                </motion.span>
+              )}
             </motion.button>
           </div>
         </div>
@@ -242,3 +301,4 @@ export default function Onboarding() {
     </main>
   );
 }
+

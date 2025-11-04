@@ -1,64 +1,60 @@
 // src/lib/auth.ts
-export type Role = "user" | "contributor";
-export type Session = {
-  id: string;
-  email: string;
-  name?: string;
-  role: Role;
-  hasOnboarded?: boolean;
-  tokenBalance?: number;     // VGT
-  dataCredits?: number;      // DC
-};
+'use server'
 
-const KEY = "vigia.session";
+import { revalidatePath } from 'next/cache'
+import { redirect } from 'next/navigation'
+import { createClient } from '@/lib/supabase/server'
 
-export function getSession(): Session | null {
-  if (typeof window === "undefined") return null;
-  const raw = localStorage.getItem(KEY);
-  return raw ? (JSON.parse(raw) as Session) : null;
-}
+export async function signUp(formData: FormData) {
+  const supabase = await createClient()
 
-export function setSession(s: Session) {
-  if (typeof window === "undefined") return;
-  localStorage.setItem(KEY, JSON.stringify(s));
-}
+  const email = formData.get('email') as string
+  const password = formData.get('password') as string
 
-export function signOut() {
-  if (typeof window === "undefined") return;
-  localStorage.removeItem(KEY);
-}
-
-export async function signIn(email: string, _pwd: string) {
-  // TODO: replace with real API
-  const s: Session = {
-    id: crypto.randomUUID(),
+  const { error } = await supabase.auth.signUp({
     email,
-    role: "user",
-    hasOnboarded: false,
-    tokenBalance: 0,
-    dataCredits: 0,
-  };
-  setSession(s);
-  return s;
+    password,
+    options: {
+      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`,
+    },
+  })
+
+  if (error) {
+    console.error('Sign up error:', error.message)
+    return redirect('/auth/signup?error=' + error.message)
+  }
+
+  return redirect('/auth/signup?message=Check email to continue sign in process')
 }
-// add this helper
-export function updateSession(patch: Partial<Session>): Session | null {
-  const curr = getSession();
-  if (!curr) return null;
-  const next: Session = { ...curr, ...patch };
-  setSession(next);
-  return next;
-}
-export async function signUpContributor(name: string, email: string, _pwd: string) {
-  const s: Session = {
-    id: crypto.randomUUID(),
+
+export async function signIn(formData: FormData) {
+  'use server'
+
+  const email = formData.get('email') as string
+  const password = formData.get('password') as string
+  const supabase = await createClient()
+
+  const { error } = await supabase.auth.signInWithPassword({
     email,
-    name,
-    role: "contributor",
-    hasOnboarded: false,
-    tokenBalance: 0,
-    dataCredits: 0,
-  };
-  setSession(s);
-  return s;
+    password,
+  })
+
+  if (error) {
+    console.error('Sign in error:', error.message)
+    return redirect('/auth/signin?error=' + error.message)
+  }
+
+  revalidatePath('/', 'layout')
+  redirect('/dashboard')
+}
+
+// --- THIS IS THE FUNCTION YOUR SIDEBAR NEEDS ---
+export async function signOut() {
+  'use server'
+  
+  const supabase = await createClient()
+  await supabase.auth.signOut()
+  
+  revalidatePath('/', 'layout')
+  redirect('/auth/signin')
 }
