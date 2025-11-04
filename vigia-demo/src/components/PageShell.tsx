@@ -1,17 +1,20 @@
 "use client";
 
 import TopBar from "@/components/TopBar";
+import { motion } from "framer-motion";
 
 export default function PageShell({
   title,
   subtitle,
   actions,
   children,
+  bannerSrc,
 }: {
   title: string;
   subtitle?: string;
   actions?: React.ReactNode; // e.g., filters / refresh button row
   children: React.ReactNode;
+  bannerSrc?: string;
 }) {
   return (
     <main className="relative min-h-screen bg-slate-950 text-white">
@@ -25,7 +28,12 @@ export default function PageShell({
       <TopBar />
 
       {/* Content container */}
-      <div className="relative mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 pt-28 pb-16">
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: [0.22,1,0.36,1] }} className="relative z-0 mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 pt-28 pb-16">
+        {bannerSrc && (
+          <div className="mb-6 w-full flex justify-center">
+            <img src={bannerSrc} alt="banner" className="w-full max-w-4xl rounded-xl object-cover shadow-lg" />
+          </div>
+        )}
         <header className="flex items-start justify-between gap-4">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-white">
@@ -41,7 +49,7 @@ export default function PageShell({
         </header>
 
         <div className="mt-8">{children}</div>
-      </div>
+      </motion.div>
     </main>
   );
 }

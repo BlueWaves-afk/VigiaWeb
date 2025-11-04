@@ -80,7 +80,7 @@ export default function TopBar() {
   );
 
   return (
-    <header className="fixed top-0 inset-x-0 z-[100]">
+  <header className="fixed top-0 inset-x-0 z-[9999] pointer-events-auto" style={{ zIndex: 1000000, position: 'fixed' }}>
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <nav
           aria-label="Primary"
@@ -94,6 +94,7 @@ export default function TopBar() {
             flex items-center justify-between
             px-3 md:px-5
           "
+          style={{ transform: 'none' }}
         >
           {/* Brand */}
           <Link href="/" className="flex items-center gap-2">

@@ -7,7 +7,7 @@ import PageShell from "@/components/PageShell";
 
 // Lazy-load demo panels (no SSR)
 const V2XDemo       = dynamic(() => import("../../components/V2XDemo"), { ssr: false });
-const SensorFusion  = dynamic(() => import("../../components/SensorFusionDemo"), { ssr: false });
+const SensorFusion  = dynamic(() => import("../../components/sensor-fusion"), { ssr: false });
 const DBSCANDemo    = dynamic(() => import("../../components/DBSCANDemo"), { ssr: false });
 const ForecastDemo  = dynamic(() => import("../../components/ForecastDemo"), { ssr: false });
 
