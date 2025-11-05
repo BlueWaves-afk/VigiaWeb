@@ -1,12 +1,16 @@
+// TopBar.tsx
 "use client";
 
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useProfile } from "@/hooks/useProfile";
-import Logo from "@/components/Logo";
 
 type NavLink = { href: string; label: string };
+
+// Optional custom dither/noise image for the banner.
+// Put the file in /public/… and set the path here (leave "" to use CSS dots).
+const CUSTOM_DITHER_IMAGE_URL = "/textures/dither.png";
 
 const LINKS: NavLink[] = [
   { href: "/", label: "Home" },
@@ -24,28 +28,17 @@ export default function TopBar() {
   const [open, setOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement | null>(null);
 
-  // Close on route change
+  useEffect(() => setOpen(false), [pathname]);
   useEffect(() => {
-    setOpen(false);
-  }, [pathname]);
-
-  // Close on outside click
-  useEffect(() => {
-    function onDocClick(e: MouseEvent) {
+    const onDocClick = (e: MouseEvent) => {
       if (!open) return;
-      if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    }
+      if (panelRef.current && !panelRef.current.contains(e.target as Node)) setOpen(false);
+    };
     document.addEventListener("mousedown", onDocClick);
     return () => document.removeEventListener("mousedown", onDocClick);
   }, [open]);
-
-  // Close on ESC
   useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setOpen(false);
-    }
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, []);
@@ -68,113 +61,144 @@ export default function TopBar() {
           <Link
             key={href}
             href={href}
-            className={`block text-base md:text-lg transition-colors ${
-              active ? "text-white" : "text-slate-200/90 hover:text-white"
-            }`}
+            className="px-2 py-3 text-base md:text-lg font-medium text-slate-300 hover:text-white transition-colors whitespace-nowrap"
           >
-            {label}
+            <span className={active ? "text-white" : undefined}>{label}</span>
           </Link>
         );
       })}
     </div>
   );
 
+  // Compose banner background (green base + custom image or tiny dots)
+  const bannerBackground = (() => {
+    const green = "linear-gradient(180deg,#1ea763,#15803d)";
+    const dots = "radial-gradient(#ffffff18 1px, transparent 1px)";
+    const custom = CUSTOM_DITHER_IMAGE_URL ? `url(${CUSTOM_DITHER_IMAGE_URL})` : "";
+    return custom ? `${green}, ${custom}` : `${green}, ${dots}`;
+  })();
+
+  const bannerBgSize =
+    CUSTOM_DITHER_IMAGE_URL && CUSTOM_DITHER_IMAGE_URL.length > 0
+      ? "100% 100%, cover"
+      : "100% 100%, 3px 3px";
+
   return (
-  <header className="fixed top-0 inset-x-0 z-[9999] pointer-events-auto" style={{ zIndex: 1000000, position: 'fixed' }}>
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <nav
-          aria-label="Primary"
-          className="
-            h-20 md:h-24
-            rounded-b-2xl
-            border-b border-white/10
-            bg-slate-950/70 backdrop-blur
-            supports-[backdrop-filter]:bg-slate-950/50
-            shadow-[0_8px_30px_rgba(0,0,0,.25)]
-            flex items-center justify-between
-            px-3 md:px-5
-          "
-          style={{ transform: 'none' }}
-        >
-          {/* Brand */}
-          <Link href="/" className="flex items-center gap-2">
-            <div className="grid h-11 w-11 place-items-center rounded-xl bg-cyan-900/40 ring-1 ring-cyan-500/30">
-              {/* use the reusable logo */}
-              <Logo size={18} />
-            </div>
-            <span className="text-white text-2xl md:text-3xl font-semibold tracking-wide">
-              VIGIA
-            </span>
-          </Link>
-
-          {/* Desktop nav */}
-          <div className="hidden md:flex items-center gap-8">
-            <NavLinks className="flex items-center gap-8" />
-            <button
-              onClick={handleStart}
-              className="rounded-xl bg-white text-slate-900 px-4 py-2 text-base font-medium hover:bg-slate-100 disabled:opacity-50"
-              aria-label="Start"
-              disabled={loading}
-            >
-              {loading ? "Loading..." : "Start"}
-            </button>
-          </div>
-
-          {/* Mobile: hamburger */}
-          <div className="md:hidden">
-            <button
-              aria-label="Open menu"
-              aria-expanded={open}
-              onClick={() => setOpen((v) => !v)}
-              className="inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-white/90 hover:bg-white/10"
-            >
-              {/* simple hamburger / close icon via CSS */}
-              <span className="sr-only">Menu</span>
-              <div className="relative h-4 w-5">
-                <span
-                  className={`absolute left-0 top-0 h-0.5 w-5 bg-white transition-transform ${
-                    open ? "translate-y-1.5 rotate-45" : ""
-                  }`}
-                />
-                <span
-                  className={`absolute left-0 top-1.5 h-0.5 w-5 bg-white transition-opacity ${
-                    open ? "opacity-0" : "opacity-100"
-                  }`}
-                />
-                <span
-                  className={`absolute left-0 top-3 h-0.5 w-5 bg-white transition-transform ${
-                    open ? "-translate-y-1.5 -rotate-45" : ""
-                  }`}
-                />
-              </div>
-            </button>
-          </div>
-        </nav>
-      </div>
-
-      {/* Mobile panel */}
-      <div
-        className={`md:hidden transition-[max-height,opacity] duration-300 ease-out ${
-          open ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
-        } overflow-hidden`}
+    <header className="fixed inset-x-0 top-0 z-[9999] pointer-events-auto">
+      {/* Dither banner with animated arrow */}
+      <Link
+        href="/sandbox"
+        className="group block w-full text-center text-sm md:text-base text-white/95 py-2 border-b border-emerald-700/40"
+        style={{
+          background: bannerBackground,
+          backgroundSize: bannerBgSize,
+          backgroundPosition: "0 0, 0 0",
+        }}
       >
-        <div
-          ref={panelRef}
-          className="mx-4 mt-2 rounded-2xl border border-white/10 bg-slate-950/80 backdrop-blur p-4 shadow-xl"
+        <span className="font-medium">
+          Check out our{" "}
+          <span className="underline underline-offset-2 decoration-white/60">Sandbox</span> to learn
+          about our features
+        </span>
+        <span
+          aria-hidden
+          className="inline-flex items-center ml-1 transition-transform duration-200 group-hover:translate-x-1"
         >
-          <NavLinks className="space-y-3" />
-          <button
-            onClick={handleStart}
-            className="mt-4 w-full rounded-xl bg-white px-4 py-2 text-slate-900 font-medium hover:bg-slate-100 disabled:opacity-50"
-            disabled={loading}
+          →
+        </span>
+      </Link>
+
+      {/* Main nav */}
+      <div className="w-full border-b border-white/10 bg-[#0f1113]/95 backdrop-blur supports-[backdrop-filter]:bg-[#0f1113]/80">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <nav aria-label="Primary" className="h-16 md:h-[72px] flex items-center justify-between">
+            {/* Brand (no logo, simple wordmark) */}
+            <Link href="/" className="flex items-center">
+              <span className="text-white text-2xl md:text-[28px] font-semibold tracking-wide">
+                VIGIA
+              </span>
+            </Link>
+
+            {/* Desktop nav + actions */}
+            <div className="hidden md:flex items-center gap-6">
+              <NavLinks className="flex items-center gap-6" />
+              <Link
+                href="/auth/signin"
+                className="rounded-full border border-white/15 px-4 md:px-5 py-2 text-base text-white/90 hover:bg-white/5 transition-all"
+              >
+                Sign in
+              </Link>
+              <button
+                onClick={handleStart}
+                className="rounded-full bg-white text-[#0f1113] px-4 md:px-5 py-2 text-base font-semibold
+                           shadow-[0_4px_16px_rgba(255,255,255,0.05)]
+                           transition-all duration-200
+                           hover:shadow-[0_6px_22px_rgba(255,255,255,0.08)]
+                           hover:-translate-y-0.5 active:translate-y-0 active:shadow-none
+                           whitespace-nowrap"
+                disabled={loading}
+                aria-label="Start"
+              >
+                {loading ? "Loading…" : "Start"}
+              </button>
+            </div>
+
+            {/* Mobile hamburger */}
+            <div className="md:hidden">
+              <button
+                aria-label="Open menu"
+                aria-expanded={open}
+                onClick={() => setOpen((v) => !v)}
+                className="inline-flex items-center justify-center rounded-xl 
+                           border border-white/15 bg-white/5 px-3 py-2 
+                           text-white/90 hover:bg-white/10 transition-all"
+              >
+                <span className="sr-only">Menu</span>
+                <div className="relative h-4 w-5">
+                  <span className={`absolute left-0 top-0 h-0.5 w-5 bg-white rounded-full transition-all ${open ? "translate-y-1.5 rotate-45" : ""}`} />
+                  <span className={`absolute left-0 top-1.5 h-0.5 w-5 bg-white rounded-full transition-opacity ${open ? "opacity-0" : "opacity-100"}`} />
+                  <span className={`absolute left-0 top-3 h-0.5 w-5 bg-white rounded-full transition-all ${open ? "-translate-y-1.5 -rotate-45" : ""}`} />
+                </div>
+              </button>
+            </div>
+          </nav>
+        </div>
+
+        {/* Mobile drawer */}
+        <div
+          className={`md:hidden transition-all duration-300 ease-out ${
+            open ? "max-h-96 opacity-100 translate-y-0" : "max-h-0 opacity-0 -translate-y-2"
+          } overflow-hidden`}
+        >
+          <div
+            ref={panelRef}
+            className="mx-4 mt-3 rounded-2xl border border-white/15 bg-[#0f1113]/95 backdrop-blur p-5"
           >
-            {loading ? "Loading..." : profile ? "Open Console" : "Sign in"}
-          </button>
+            <NavLinks className="flex flex-col gap-2" />
+            <div className="mt-4 grid grid-cols-2 gap-3">
+              <Link
+                href="/auth/signin"
+                className="rounded-xl border border-white/15 px-4 py-2 text-center text-white/90 hover:bg-white/5 transition-all"
+                onClick={() => setOpen(false)}
+              >
+                Sign in
+              </Link>
+              <button
+                onClick={() => {
+                  setOpen(false);
+                  handleStart();
+                }}
+                className="rounded-xl bg-white px-4 py-2 text-center font-semibold text-[#0f1113]
+                           shadow-[0_4px_16px_rgba(255,255,255,0.05)]
+                           transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0"
+                disabled={loading}
+              >
+                {loading ? "Loading…" : "Start"}
+              </button>
+            </div>
+          </div>
         </div>
       </div>
-
-      {/* glow line */}
-      <div className="h-px w-full bg-[linear-gradient(90deg,transparent,rgba(255,255,255,0.2),transparent)]" />
     </header>
   );
 }
