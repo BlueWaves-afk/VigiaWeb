@@ -1,23 +1,29 @@
-// src/app/sandbox/page.tsx
 "use client";
 
 import dynamic from "next/dynamic";
 import { useState } from "react";
 import PageShell from "@/components/PageShell";
 
-// Lazy-load demo panels (no SSR)
-const V2XDemo       = dynamic(() => import("../../components/V2XDemo"), { ssr: false });
-const SensorFusion  = dynamic(() => import("../../components/sensor-fusion"), { ssr: false });
-const DBSCANDemo    = dynamic(() => import("../../components/DBSCANDemo"), { ssr: false });
-const ForecastDemo  = dynamic(() => import("../../components/ForecastDemo"), { ssr: false });
-
-type TabKey = "v2x" | "sensor" | "dbscan" | "forecast";
+// —— Lazy-load demo panels (no SSR) ——
+const V2XDemo = dynamic(() => import("../../components/V2XDemo"), { ssr: false });
+const SensorFusion = dynamic(() => import("../../components/sensor-fusion"), { ssr: false });
+const DBSCANDemo = dynamic(() => import("../../components/DBSCANDemo"), { ssr: false });
+const ForecastDemo = dynamic(() => import("../../components/ForecastDemo"), { ssr: false });
+const ArgusAegisDemo = dynamic(
+  () => import("../../components/ArgusAegisDemo"),
+  { ssr: false }
+);
+const CopilotGeoRAG = dynamic(() => import("../../components/CopilotGeoRAG"), { ssr: false });
+// add "argus" to the union
+type TabKey = "argus"|"v2x" | "sensor" | "dbscan" | "forecast" | "copilot";
 
 const NAV: { key: TabKey; label: string; desc: string }[] = [
-  { key: "v2x",      label: "V2X Demo",            desc: "Vehicle ↔ Vehicle alerts over WS/MQTT" },
-  { key: "sensor",   label: "Sensor Perception",   desc: "Multimodal (vision + radar/LiDAR mock)" },
-  { key: "dbscan",   label: "DBSCAN Clustering",   desc: "Cluster hazards / trajectories" },
-  { key: "forecast", label: "Predictive Forecast", desc: "Hazard density projections" },
+  { key: "argus",    label: "Argus + Aegis",      desc: "Privacy-first perception (blur faces & plates)" },
+  { key: "v2x",      label: "V2X Demo",           desc: "Vehicle ↔ Vehicle alerts over WS/MQTT" },
+  { key: "sensor",   label: "Sensor Perception",  desc: "Multimodal (acoustic + accelerometer)" },
+  { key: "dbscan",   label: "DBSCAN Clustering",  desc: "Cluster & deduplicate reports" },
+  { key: "forecast", label: "Predictive Forecast",desc: "Hazard density projections" },
+  { key: "copilot",  label: "Co-Pilot (Geo-RAG)",  desc: "Generative guidance from geospatial context" },
 ];
 
 export default function SandboxPage() {
@@ -26,7 +32,7 @@ export default function SandboxPage() {
   return (
     <PageShell
       title="Sandbox"
-      subtitle="Interactive demos: V2X, multimodal perception, clustering, and forecasting."
+      subtitle="Interactive demos: V2X, multimodal sensor fusion, clustering, network intelligence, and forecasting."
     >
       <div className="grid gap-6 md:grid-cols-[260px_1fr]">
         {/* Local sidebar */}
@@ -60,10 +66,14 @@ export default function SandboxPage() {
 
         {/* Demo surface */}
         <section className="space-y-6">
+          {tab === "argus" && <ArgusAegisDemo />}
           {tab === "v2x" && <V2XDemo />}
           {tab === "sensor" && <SensorFusion />}
           {tab === "dbscan" && <DBSCANDemo />}
+          {tab === "copilot" && <CopilotGeoRAG />}
           {tab === "forecast" && <ForecastDemo />}
+          
+          
         </section>
       </div>
     </PageShell>

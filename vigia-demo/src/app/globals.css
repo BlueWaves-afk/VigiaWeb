@@ -1,5 +1,19 @@
 @import "tailwindcss";
-
+@import "leaflet/dist/leaflet.css";
+/* tiny pulse + glass styles used below */
+.pulse {
+  animation: pulse 1.6s infinite;
+}
+@keyframes pulse {
+  0% { transform: scale(1); opacity: .55; }
+  70% { transform: scale(1.8); opacity: 0; }
+  100% { transform: scale(1.8); opacity: 0; }
+}
+.card-glass { border:1px solid rgba(255,255,255,.08); background:rgba(0,0,0,.35); backdrop-filter: blur(10px); border-radius: 16px; }
+.btn { border-radius:12px; padding:.55rem .9rem; border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.06); color:#fff; }
+.btn:hover{ background:rgba(255,255,255,.12); }
+.btn-primary{ background:#fff; color:#0f172a; border-color:transparent; }
+.toast { position:absolute; top:12px; right:12px; z-index:9999; }
 :root {
   --background: #ffffff;
   --foreground: #171717;
