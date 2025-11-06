@@ -1,14 +1,12 @@
 // src/middleware.ts
-import { createServerClient, type CookieOptions } from '@supabase/ssr'
-import { NextResponse, type NextRequest } from 'next/server'
+import { NextResponse, type NextRequest } from "next/server";
+import { createServerClient, type CookieOptions } from "@supabase/ssr";
 
-// Helper function to create the middleware client
-export async function updateSession(request: NextRequest) {
+/** Bridge Supabase cookies in middleware (per Supabase SSR pattern) */
+async function getSupabaseAndResponse(request: NextRequest) {
   let response = NextResponse.next({
-    request: {
-      headers: request.headers,
-    },
-  })
+    request: { headers: request.headers },
+  });
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -16,82 +14,76 @@ export async function updateSession(request: NextRequest) {
     {
       cookies: {
         get(name: string) {
-          return request.cookies.get(name)?.value
+          return request.cookies.get(name)?.value;
         },
         set(name: string, value: string, options: CookieOptions) {
-          request.cookies.set({ name, value, ...options })
+          // Mirror cookie mutations to the response
+          request.cookies.set({ name, value, ...options });
           response = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
-          })
-          response.cookies.set({ name, value, ...options })
+            request: { headers: request.headers },
+          });
+          response.cookies.set({ name, value, ...options });
         },
         remove(name: string, options: CookieOptions) {
-          request.cookies.set({ name, value: '', ...options })
+          request.cookies.set({ name, value: "", ...options });
           response = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
-          })
-          response.cookies.set({ name, value: '', ...options })
+            request: { headers: request.headers },
+          });
+          response.cookies.set({ name, value: "", ...options });
         },
       },
     }
-  )
+  );
 
-  // Refresh session if expired
-  await supabase.auth.getUser()
+  // Touch the session to refresh if needed
+  await supabase.auth.getUser().catch(() => { /* ignore */ });
 
-  return response
+  return { supabase, response };
 }
 
-// The main middleware function
 export async function middleware(request: NextRequest) {
-  const response = await updateSession(request)
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name: string) {
-          return request.cookies.get(name)?.value
-        },
-        set(name: string, value: string, options: CookieOptions) {
-          response.cookies.set({ name, value, ...options })
-        },
-        remove(name: string, options: CookieOptions) {
-          response.cookies.set({ name, value: '', ...options })
-        },
-      },
-    }
-  )
+  const { supabase, response } = await getSupabaseAndResponse(request);
+  const url = new URL(request.url);
+  const path = url.pathname;
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  // Let Supabase auth callbacks pass through without redirects
+  if (path.startsWith("/auth/callback")) return response;
 
-  // Protect dashboard routes
-  if (!user && request.nextUrl.pathname.startsWith('/dashboard')) {
-    return NextResponse.redirect(new URL('/auth/signin', request.url))
+  // Get the current user (reads from cookies set above)
+  const { data: { user } = { user: null } } = await supabase.auth.getUser();
+
+  // Routes that require auth
+  const requiresAuth =
+    path.startsWith("/dashboard") ||
+    path === "/datasets" ||
+    path.startsWith("/datasets/");
+
+  if (!user && requiresAuth) {
+    const redirectTo = new URL("/auth/signin", request.url);
+    // preserve where the user intended to go
+    redirectTo.searchParams.set("redirectedFrom", path);
+    return NextResponse.redirect(redirectTo);
   }
 
-  // Redirect authenticated users from auth pages
-  if (user && (request.nextUrl.pathname.startsWith('/auth/signin') || request.nextUrl.pathname.startsWith('/auth/signup'))) {
-    return NextResponse.redirect(new URL('/dashboard', request.url))
+  // If already signed in, keep auth pages out of the way
+  const isAuthPage =
+    path.startsWith("/auth/signin") || path.startsWith("/auth/signup");
+  if (user && isAuthPage) {
+    return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
-  return response
+  return response;
 }
 
+/**
+ * Match everything except:
+ *  - next internals & static
+ *  - public favicons/images
+ *  - your model/video/wasm buckets (avoid intercepting big files)
+ *  - robots/sitemap
+ */
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     */
-    '/((?!_next/static|_next/image|favicon.ico).*)',
+    "/((?!_next/static|_next/image|favicon.ico|apple-touch-icon.png|site.webmanifest|robots.txt|sitemap.xml|images/|public/|ort/|models/|demo/).*)",
   ],
-}
+};

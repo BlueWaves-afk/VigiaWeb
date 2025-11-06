@@ -1,6 +1,6 @@
 export const metadata = { title: "VIGIA – Argus-V8X Showcase" };
 
-import ArgusShowcase from "@/components/ArgusShowcase";
+import ArgusShowcase from "@/components/VGTShowcase";
 
 export default function Page() {
   return (

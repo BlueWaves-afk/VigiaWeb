@@ -1,13 +1,61 @@
 // src/app/docs/page.tsx
+"use client";
+
 import Link from "next/link";
 import PageShell from "@/components/PageShell";
 import DocsTOC from "@/components/DocsTOC";
+import { motion } from "framer-motion";
+
+const fadeUp = (delay = 0) => ({
+  initial: { opacity: 0, y: 12 },
+  animate: { opacity: 1, y: 0 },
+  transition: { delay, duration: 0.6, ease: "easeOut" as const },
+});
+
+const springTap = {
+  whileHover: { 
+    y: -2, 
+    scale: 1.02, 
+    transition: { 
+      type: "spring" as const, 
+      stiffness: 400, 
+      damping: 25 
+    } 
+  },
+  whileTap: { scale: 0.98, y: 0 },
+};
+
+function CodeBlock({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+  return (
+    <motion.pre
+      initial={{ opacity: 0, scale: 0.98 }}
+      whileInView={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.4 }}
+      className={`rounded-2xl border border-white/10 bg-gradient-to-br from-slate-900 to-slate-800 p-6 overflow-auto font-mono text-sm leading-relaxed backdrop-blur-lg ${className}`}
+    >
+      {children}
+    </motion.pre>
+  );
+}
+
+function InfoCard({ children }: { children: React.ReactNode }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className="rounded-2xl border border-white/10 bg-gradient-to-br from-slate-800/50 to-slate-900/70 p-6 backdrop-blur-lg"
+    >
+      {children}
+    </motion.div>
+  );
+}
 
 export default function DocsPage() {
   // Keep these ids in sync with section id="" attributes below
   const sections = [
     { id: "overview",   title: "Overview" },
-    { id: "toc",        title: "What’s inside" },
+    { id: "toc",        title: "What's inside" },
     { id: "dataset",    title: "1) Dataset & labels" },
     { id: "train",      title: "2) Training" },
     { id: "export",     title: "3) Export & quantization" },
@@ -23,58 +71,95 @@ export default function DocsPage() {
       title="ArgusV8X — Training & Plugin Integration Guide"
       subtitle="From dataset to deployable plugin: YOLOv8-based hazard detection tuned for VIGIA."
     >
-      <div className="grid gap-6 lg:grid-cols-[260px_1fr]">
+      <div className="grid gap-8 lg:grid-cols-[280px_1fr]">
         <DocsTOC sections={sections} />
 
-        <div className="prose prose-invert max-w-none">
+        <div className="max-w-none space-y-12">
           {/* Overview */}
-          <section id="overview">
-            <h2>Overview</h2>
-            <p>
-              <b>ArgusV8X</b> is a lightweight YOLOv8-family detector specialized for
+          <motion.section 
+            id="overview"
+            {...fadeUp(0.1)}
+            className="scroll-mt-24"
+          >
+            <h2 className="text-3xl font-semibold text-white mb-6">Overview</h2>
+            <p className="text-lg leading-relaxed text-slate-300 mb-6">
+              <b className="text-cyan-300">ArgusV8X</b> is a lightweight YOLOv8-family detector specialized for
               on-road hazards (potholes, debris, cones, barricades, stalled vehicles).
               It exports to ONNX / TFLite / CoreML for edge inference and plugs into
-              the VIGIA <i>Argus</i> runtime as a versioned <b>plugin</b> with metadata,
+              the VIGIA <i>Argus</i> runtime as a versioned <b className="text-emerald-300">plugin</b> with metadata,
               health checks, and DePIN reward hooks.
             </p>
-            <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-              <ul className="m-0">
-                <li>Backbone: YOLOv8-n / s (Ultralytics)</li>
-                <li>Target: 30–60 FPS @ 640 (edge devices)</li>
-                <li>Exports: ONNX (fp32/int8), TFLite (fp16/int8), CoreML</li>
-                <li>Plugin I/O: {`{image → hazards[]}`}, geo stamp, confidence, mint hooks</li>
+            <InfoCard>
+              <ul className="space-y-2 text-slate-300">
+                <li className="flex items-center gap-3">
+                  <div className="w-2 h-2 rounded-full bg-cyan-400 flex-shrink-0" />
+                  <span><b>Backbone:</b> YOLOv8-n / s (Ultralytics)</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <div className="w-2 h-2 rounded-full bg-cyan-400 flex-shrink-0" />
+                  <span><b>Target:</b> 30–60 FPS @ 640 (edge devices)</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <div className="w-2 h-2 rounded-full bg-cyan-400 flex-shrink-0" />
+                  <span><b>Exports:</b> ONNX (fp32/int8), TFLite (fp16/int8), CoreML</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <div className="w-2 h-2 rounded-full bg-cyan-400 flex-shrink-0" />
+                  <span><b>Plugin I/O:</b> {`{image → hazards[]}`}, geo stamp, confidence, mint hooks</span>
+                </li>
               </ul>
-            </div>
-          </section>
+            </InfoCard>
+          </motion.section>
 
           {/* TOC (onscreen quick links) */}
-          <section id="toc">
-            <h3>What’s inside</h3>
-            <ol>
-              <li><a href="#dataset">Dataset & labels</a></li>
-              <li><a href="#train">Training</a></li>
-              <li><a href="#export">Export & quantization</a></li>
-              <li><a href="#evaluate">Evaluation & ablations</a></li>
-              <li><a href="#plugin">Build a VIGIA plugin</a></li>
-              <li><a href="#runtime">Runtime & benchmarks</a></li>
-              <li><a href="#model-card">Model Card</a></li>
-            </ol>
-          </section>
+          <motion.section 
+            id="toc"
+            {...fadeUp(0.2)}
+            className="scroll-mt-24"
+          >
+            <h3 className="text-2xl font-semibold text-white mb-6">What's inside</h3>
+            <div className="grid gap-4 sm:grid-cols-2">
+              {sections.slice(2, -1).map((section, index) => (
+                <motion.div
+                  key={section.id}
+                  initial={{ opacity: 0, x: -10 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.1 + index * 0.05 }}
+                  whileHover={{ x: 4 }}
+                  className="flex items-center gap-3 group"
+                >
+                  <div className="w-2 h-2 rounded-full bg-cyan-400 flex-shrink-0" />
+                  <Link 
+                    href={`#${section.id}`}
+                    className="text-slate-300 hover:text-cyan-300 transition-colors group-hover:underline"
+                  >
+                    {section.title}
+                  </Link>
+                </motion.div>
+              ))}
+            </div>
+          </motion.section>
 
           {/* Dataset */}
-          <section id="dataset">
-            <h2>1) Dataset & labels</h2>
-            <p>YOLO format (<code>images/</code>, <code>labels/</code> *.txt). Classes:</p>
-            <pre className="rounded-xl bg-black/50 p-4 overflow-auto">
+          <motion.section 
+            id="dataset"
+            {...fadeUp(0.3)}
+            className="scroll-mt-24"
+          >
+            <h2 className="text-3xl font-semibold text-white mb-6">1) Dataset & labels</h2>
+            <p className="text-lg leading-relaxed text-slate-300 mb-4">
+              YOLO format (<code className="text-cyan-300">images/</code>, <code className="text-cyan-300">labels/</code> *.txt). Classes:
+            </p>
+            <CodeBlock>
 {`0 pothole
 1 debris
 2 cone
 3 barricade
 4 stalled_vehicle`}
-            </pre>
+            </CodeBlock>
 
-            <p>Dataset YAML:</p>
-            <pre className="rounded-xl bg-black/50 p-4 overflow-auto">
+            <p className="text-lg leading-relaxed text-slate-300 mt-6 mb-4">Dataset YAML:</p>
+            <CodeBlock>
 {`# data/argusv8x.yaml
 path: /abs/path/to/dataset
 train: images/train
@@ -86,21 +171,36 @@ names:
   2: cone
   3: barricade
   4: stalled_vehicle`}
-            </pre>
+            </CodeBlock>
 
-            <p className="mt-4"><b>Tips</b></p>
-            <ul>
-              <li>Balance classes; ≥2k instances/class if possible.</li>
-              <li>Night/rain/dust augmentations; keep a clean <i>val</i> split.</li>
-              <li>Filename or sidecar JSON can include GPS/time for later analytics.</li>
-            </ul>
-          </section>
+            <div className="mt-6 p-4 rounded-2xl border border-amber-400/20 bg-amber-500/10 backdrop-blur-lg">
+              <p className="text-amber-200 font-semibold mb-2">Tips</p>
+              <ul className="text-amber-100/90 space-y-2">
+                <li className="flex items-start gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-amber-400 mt-1.5 flex-shrink-0" />
+                  Balance classes; ≥2k instances/class if possible.
+                </li>
+                <li className="flex items-start gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-amber-400 mt-1.5 flex-shrink-0" />
+                  Night/rain/dust augmentations; keep a clean <i>val</i> split.
+                </li>
+                <li className="flex items-start gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-amber-400 mt-1.5 flex-shrink-0" />
+                  Filename or sidecar JSON can include GPS/time for later analytics.
+                </li>
+              </ul>
+            </div>
+          </motion.section>
 
           {/* Training */}
-          <section id="train">
-            <h2>2) Training</h2>
-            <p>Ultralytics baseline:</p>
-            <pre className="rounded-xl bg-black/50 p-4 overflow-auto">
+          <motion.section 
+            id="train"
+            {...fadeUp(0.4)}
+            className="scroll-mt-24"
+          >
+            <h2 className="text-3xl font-semibold text-white mb-6">2) Training</h2>
+            <p className="text-lg leading-relaxed text-slate-300 mb-4">Ultralytics baseline:</p>
+            <CodeBlock>
 {`pip install ultralytics==8.3.0
 
 # baseline
@@ -116,18 +216,31 @@ yolo detect train \\
 
 # resume
 yolo detect train resume=True name=argusv8x_n_640`}
-            </pre>
-            <ul>
-              <li><b>mosaic=0.5</b>, <b>hsv=0.2</b>, <b>fliplr=0.5</b>, <b>copy_paste=0.2</b></li>
-              <li>If many small objects, try <code>box=10</code> loss weight.</li>
-              <li>Small datasets: <code>freeze=10</code> (warm the head first).</li>
+            </CodeBlock>
+            <ul className="mt-4 space-y-2 text-slate-300">
+              <li className="flex items-start gap-2">
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 mt-1.5 flex-shrink-0" />
+                <b>mosaic=0.5</b>, <b>hsv=0.2</b>, <b>fliplr=0.5</b>, <b>copy_paste=0.2</b>
+              </li>
+              <li className="flex items-start gap-2">
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 mt-1.5 flex-shrink-0" />
+                If many small objects, try <code className="text-cyan-300">box=10</code> loss weight.
+              </li>
+              <li className="flex items-start gap-2">
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 mt-1.5 flex-shrink-0" />
+                Small datasets: <code className="text-cyan-300">freeze=10</code> (warm the head first).
+              </li>
             </ul>
-          </section>
+          </motion.section>
 
           {/* Export */}
-          <section id="export">
-            <h2>3) Export & quantization</h2>
-            <pre className="rounded-xl bg-black/50 p-4 overflow-auto">
+          <motion.section 
+            id="export"
+            {...fadeUp(0.5)}
+            className="scroll-mt-24"
+          >
+            <h2 className="text-3xl font-semibold text-white mb-6">3) Export & quantization</h2>
+            <CodeBlock>
 {`RUN=runs/detect/argusv8x_n_640
 
 # ONNX
@@ -141,40 +254,57 @@ yolo export model=$RUN/weights/best.pt format=tflite int8=True
 
 # CoreML
 yolo export model=$RUN/weights/best.pt format=coreml`}
-            </pre>
+            </CodeBlock>
 
-            <p>Optional stricter int8 with calibration (~200 diverse frames):</p>
-            <pre className="rounded-xl bg-black/50 p-4 overflow-auto">
+            <p className="text-lg leading-relaxed text-slate-300 mt-6 mb-4">Optional stricter int8 with calibration (~200 diverse frames):</p>
+            <CodeBlock>
 {`python tools/calibrate_int8.py \\
   --images data/calib/*.jpg \\
   --model $RUN/weights/best.onnx \\
   --out   $RUN/weights/best_int8.onnx`}
-            </pre>
-          </section>
+            </CodeBlock>
+          </motion.section>
 
           {/* Evaluation */}
-          <section id="evaluate">
-            <h2>4) Evaluation & ablations</h2>
-            <pre className="rounded-xl bg-black/50 p-4 overflow-auto">
+          <motion.section 
+            id="evaluate"
+            {...fadeUp(0.6)}
+            className="scroll-mt-24"
+          >
+            <h2 className="text-3xl font-semibold text-white mb-6">4) Evaluation & ablations</h2>
+            <CodeBlock>
 {`yolo detect val model=$RUN/weights/best.pt data=data/argusv8x.yaml imgsz=640
 
 python tools/val_onnx.py \\
   --model $RUN/weights/best.onnx \\
   --data  data/argusv8x.yaml`}
-            </pre>
-            <p>Track mAP@.5:.95, per-class PR, and device latency. If pothole recall lags:</p>
-            <ul>
-              <li>Train at 768 then distill to 640.</li>
-              <li>Small-object oversampling / cutout augment.</li>
-              <li>Try <code>yolov8s</code> or adjust loss weights.</li>
+            </CodeBlock>
+            <p className="text-lg leading-relaxed text-slate-300 mt-4">Track mAP@.5:.95, per-class PR, and device latency. If pothole recall lags:</p>
+            <ul className="space-y-2 text-slate-300">
+              <li className="flex items-start gap-2">
+                <div className="w-1.5 h-1.5 rounded-full bg-purple-400 mt-1.5 flex-shrink-0" />
+                Train at 768 then distill to 640.
+              </li>
+              <li className="flex items-start gap-2">
+                <div className="w-1.5 h-1.5 rounded-full bg-purple-400 mt-1.5 flex-shrink-0" />
+                Small-object oversampling / cutout augment.
+              </li>
+              <li className="flex items-start gap-2">
+                <div className="w-1.5 h-1.5 rounded-full bg-purple-400 mt-1.5 flex-shrink-0" />
+                Try <code className="text-cyan-300">yolov8s</code> or adjust loss weights.
+              </li>
             </ul>
-          </section>
+          </motion.section>
 
           {/* Plugin */}
-          <section id="plugin">
-            <h2>5) Build a VIGIA plugin</h2>
-            <p>Wrap the exported model with the Argus plugin contract:</p>
-            <pre className="rounded-xl bg-black/50 p-4 overflow-auto">
+          <motion.section 
+            id="plugin"
+            {...fadeUp(0.7)}
+            className="scroll-mt-24"
+          >
+            <h2 className="text-3xl font-semibold text-white mb-6">5) Build a VIGIA plugin</h2>
+            <p className="text-lg leading-relaxed text-slate-300 mb-4">Wrap the exported model with the Argus plugin contract:</p>
+            <CodeBlock>
 {`export type Hazard = {
   id: string;
   cls: "pothole" | "debris" | "cone" | "barricade" | "stalled_vehicle";
@@ -188,58 +318,108 @@ export type ArgusOutput = {
   hazards: Hazard[];
   timing_ms?: number;
 };`}
-            </pre>
-            <p className="mt-3"><b>Reward hooks</b></p>
-            <ul>
-              <li>No mint on V2X messages.</li>
-              <li>Mint VGT only when a hazard is <b>CONFIRMED</b> (≥2 confirmations, no contradictions).</li>
-              <li>Split: Publisher 70%, Validators 30% — contributors only.</li>
-            </ul>
-          </section>
-
-          {/* Runtime */}
-          <section id="runtime">
-            <h2>6) Runtime & benchmarks</h2>
-            <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-              <ul className="m-0">
-                <li>M2/M3 + CoreML EP (ONNX): 35–60 FPS @ 640 (v8n)</li>
-                <li>Android NNAPI / GPU (TFLite int8): 25–45 FPS @ 640</li>
-                <li>iOS CoreML fp16: 30–50 FPS @ 640</li>
+            </CodeBlock>
+            <div className="mt-6 p-4 rounded-2xl border border-emerald-400/20 bg-emerald-500/10 backdrop-blur-lg">
+              <p className="text-emerald-200 font-semibold mb-2">Reward hooks</p>
+              <ul className="text-emerald-100/90 space-y-2">
+                <li className="flex items-start gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 mt-1.5 flex-shrink-0" />
+                  No mint on V2X messages.
+                </li>
+                <li className="flex items-start gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 mt-1.5 flex-shrink-0" />
+                  Mint VGT only when a hazard is <b>CONFIRMED</b> (≥2 confirmations, no contradictions).
+                </li>
+                <li className="flex items-start gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 mt-1.5 flex-shrink-0" />
+                  Split: Publisher 70%, Validators 30% — contributors only.
+                </li>
               </ul>
             </div>
-            <p className="mt-4">Measure end-to-end latency (resize + NMS included):</p>
-            <pre className="rounded-xl bg-black/50 p-4 overflow-auto">
+          </motion.section>
+
+          {/* Runtime */}
+          <motion.section 
+            id="runtime"
+            {...fadeUp(0.8)}
+            className="scroll-mt-24"
+          >
+            <h2 className="text-3xl font-semibold text-white mb-6">6) Runtime & benchmarks</h2>
+            <InfoCard>
+              <ul className="space-y-3 text-slate-300">
+                <li className="flex items-center gap-3">
+                  <div className="w-2 h-2 rounded-full bg-cyan-400 flex-shrink-0" />
+                  <span><b>M2/M3 + CoreML EP (ONNX):</b> 35–60 FPS @ 640 (v8n)</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <div className="w-2 h-2 rounded-full bg-cyan-400 flex-shrink-0" />
+                  <span><b>Android NNAPI / GPU (TFLite int8):</b> 25–45 FPS @ 640</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <div className="w-2 h-2 rounded-full bg-cyan-400 flex-shrink-0" />
+                  <span><b>iOS CoreML fp16:</b> 30–50 FPS @ 640</span>
+                </li>
+              </ul>
+            </InfoCard>
+            <p className="text-lg leading-relaxed text-slate-300 mt-6 mb-4">Measure end-to-end latency (resize + NMS included):</p>
+            <CodeBlock>
 {`const t0 = performance.now();
 const out = await session.run(feeds);
 const t1 = performance.now();
 console.log("inference ms:", (t1 - t0).toFixed(2));`}
-            </pre>
-          </section>
+            </CodeBlock>
+          </motion.section>
 
           {/* Model Card */}
-          <section id="model-card">
-            <h2>7) Model Card (template)</h2>
-            <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-              <p className="m-0"><b>Name</b>: ArgusV8X-n-640</p>
-              <p className="m-0"><b>Version</b>: 0.1.0</p>
-              <p className="m-0"><b>Task</b>: Object detection (road hazards)</p>
-              <p className="m-0"><b>Train data</b>: VIGIA-RoadHazards v1 (India, mixed weather/day-night)</p>
-              <p className="m-0"><b>Metrics (val)</b>: mAP@.5=.74, mAP@.5:.95=.47, P=.78, R=.72</p>
-              <p className="m-0"><b>Limits</b>: Small potholes & glare reduce recall; cone occlusions cause FPs.</p>
-              <p className="m-0"><b>Safety</b>: Advisory only; human fallback + server-side consensus.</p>
-              <p className="m-0"><b>Licensing</b>: Weights © VIGIA; Ultralytics training under AGPL-3.0.</p>
-            </div>
-          </section>
+          <motion.section 
+            id="model-card"
+            {...fadeUp(0.9)}
+            className="scroll-mt-24"
+          >
+            <h2 className="text-3xl font-semibold text-white mb-6">7) Model Card (template)</h2>
+            <InfoCard>
+              <div className="space-y-3 text-slate-300">
+                <p><b className="text-cyan-300">Name</b>: ArgusV8X-n-640</p>
+                <p><b className="text-cyan-300">Version</b>: 0.1.0</p>
+                <p><b className="text-cyan-300">Task</b>: Object detection (road hazards)</p>
+                <p><b className="text-cyan-300">Train data</b>: VIGIA-RoadHazards v1 (India, mixed weather/day-night)</p>
+                <p><b className="text-cyan-300">Metrics (val)</b>: mAP@.5=.74, mAP@.5:.95=.47, P=.78, R=.72</p>
+                <p><b className="text-cyan-300">Limits</b>: Small potholes & glare reduce recall; cone occlusions cause FPs.</p>
+                <p><b className="text-cyan-300">Safety</b>: Advisory only; human fallback + server-side consensus.</p>
+                <p><b className="text-cyan-300">Licensing</b>: Weights © VIGIA; Ultralytics training under AGPL-3.0.</p>
+              </div>
+            </InfoCard>
+          </motion.section>
 
           {/* Links */}
-          <section id="links">
-            <h3>Next steps</h3>
-            <ul>
-              <li>Validate in <Link href="/sandbox">Sandbox</Link> (consensus + mint flow).</li>
-              <li>Review <Link href="/pricing">Pricing</Link> for DePIN reward splits.</li>
-              <li>Install plugin: <code>vigia plugins add ./argusv8x</code>.</li>
-            </ul>
-          </section>
+          <motion.section 
+            id="links"
+            {...fadeUp(1)}
+            className="scroll-mt-24"
+          >
+            <h3 className="text-2xl font-semibold text-white mb-6">Next steps</h3>
+            <div className="flex flex-wrap gap-4">
+              <motion.div {...springTap}>
+                <Link 
+                  href="/sandbox"
+                  className="inline-flex items-center gap-2 rounded-xl bg-white px-5 py-3 font-semibold text-slate-900 shadow-lg transition-all hover:shadow-xl"
+                >
+                  Validate in Sandbox
+                </Link>
+              </motion.div>
+              <motion.div {...springTap}>
+                <Link 
+                  href="/pricing"
+                  className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-5 py-3 font-medium text-white/90 backdrop-blur-lg transition-all hover:bg-white/10 hover:border-white/25"
+                >
+                  Review Pricing
+                </Link>
+              </motion.div>
+            </div>
+            <p className="text-lg leading-relaxed text-slate-300 mt-6">
+              Install plugin: <code className="text-cyan-300 bg-slate-800/50 px-2 py-1 rounded-lg">vigia plugins add ./argusv8x</code>
+            </p>
+          </motion.section>
         </div>
       </div>
     </PageShell>

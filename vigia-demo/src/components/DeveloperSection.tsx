@@ -44,7 +44,7 @@ const FeatureRow = ({ icon, title, body }: { icon: React.ReactNode; title: strin
   >
     <motion.div
       whileHover={{ scale: 1.1, rotate: 5 }}
-      transition={{ type: "spring", stiffness: 400, damping: 10 }}
+      transition={{ type: "spring" as const, stiffness: 400, damping: 10 }}
       className="mt-1 shrink-0 rounded-lg bg-white/10 p-2 text-sky-300 ring-1 ring-white/15 transition-all group-hover:bg-white/15 group-hover:text-sky-200 group-hover:ring-white/25"
     >
       {icon}
@@ -98,22 +98,37 @@ export default function DeveloperSection() {
   return (
     <section
       id="developer"
-      className="relative mx-auto mt-28 w-full max-w-6xl rounded-2xl bg-black/30 p-6 ring-1 ring-white/10 backdrop-blur md:p-10"
+      className="relative mx-auto mt-28 w-full max-w-6xl rounded-2xl bg-gradient-to-br from-slate-900/60 to-slate-950/80 p-8 ring-1 ring-white/10 backdrop-blur-xl"
       style={{ scrollMarginTop: 96 }}
     >
-      {/* Animated background gradient */}
+      {/* Background glow effect */}
+      <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-cyan-500/5 via-transparent to-purple-500/5" />
+      
+      {/* Subtle grid background */}
+      <div className="pointer-events-none absolute inset-0 opacity-[.15] [mask-image:radial-gradient(60%_60%_at_50%_50%,#000_40%,transparent_100%)]">
+        <div className="h-full w-full bg-[linear-gradient(to_right,rgba(148,163,184,.1)_1px,transparent_1px),linear-gradient(to_bottom,rgba(148,163,184,.08)_1px,transparent_1px)] bg-[size:28px_28px]" />
+      </div>
+
+      {/* "What VIGIA promises" heading */}
       <motion.div
-        animate={{
-          backgroundPosition: ["0% 0%", "100% 100%"],
-        }}
-        transition={{
-          duration: 20,
-          repeat: Infinity,
-          repeatType: "reverse",
-          ease: "linear",
-        }}
-        className="pointer-events-none absolute inset-0 rounded-2xl bg-[radial-gradient(circle_at_50%_50%,rgba(56,189,248,0.03),transparent_50%)] bg-[length:200%_200%]"
-      />
+        initial={{ opacity: 0, y: 10 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        className="relative mb-12 text-center"
+      >
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+          className="inline-flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-6 py-3 backdrop-blur-lg"
+        >
+          <div className="h-2 w-2 rounded-full bg-cyan-400 animate-pulse" />
+          <span className="text-sm font-medium text-cyan-300 tracking-wide">
+            WHAT VIGIA PROMISES
+          </span>
+          <div className="h-2 w-2 rounded-full bg-purple-400 animate-pulse" />
+        </motion.div>
+      </motion.div>
 
       <div className="relative grid grid-cols-1 gap-10 md:grid-cols-2">
         {/* LEFT */}
@@ -125,7 +140,7 @@ export default function DeveloperSection() {
         >
           <motion.h3
             variants={itemVariants}
-            transition={{ duration: 0.5, ease: "easeOut" }}
+            transition={{ duration: 0.5, ease: "easeOut" as const }}
             className="text-4xl font-semibold tracking-tight md:text-5xl"
           >
             <span className="bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">
@@ -139,18 +154,18 @@ export default function DeveloperSection() {
 
           <motion.p
             variants={itemVariants}
-            className="mt-4 max-w-xl text-lg leading-relaxed text-slate-300"
+            className="mt-6 max-w-xl text-lg leading-relaxed text-slate-300"
           >
             VIGIA is built for rapid prototyping and seamless integration. Developers trust it
             for secure, compliant, production-ready performance.
           </motion.p>
 
-          <motion.div variants={itemVariants} className="mt-6">
+          <motion.div variants={itemVariants} className="mt-8">
             <motion.a
               href="/docs"
               whileHover={{ scale: 1.02, x: 2 }}
               whileTap={{ scale: 0.98 }}
-              className="group inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-white to-slate-100 px-5 py-2.5 text-sm font-medium text-slate-900 shadow-lg shadow-black/10 transition-all hover:shadow-xl hover:shadow-black/20"
+              className="group inline-flex items-center gap-2 rounded-xl bg-white px-6 py-3 font-semibold text-slate-900 shadow-lg transition-all hover:shadow-xl hover:-translate-y-0.5"
             >
               Build with VIGIA
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
@@ -159,7 +174,7 @@ export default function DeveloperSection() {
 
           <motion.div
             variants={containerVariants}
-            className="mt-6 divide-y divide-white/10 border-y border-white/10"
+            className="mt-8 divide-y divide-white/10 border-y border-white/10"
           >
             <FeatureRow
               icon={<Code2 className="h-5 w-5" />}
@@ -199,7 +214,7 @@ export default function DeveloperSection() {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="hidden md:block mb-4 overflow-hidden rounded-xl border border-white/10 group"
+            className="hidden md:block mb-6 overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-slate-800/50 to-slate-900/70 group backdrop-blur-lg"
           >
             <motion.div
               whileHover={{ scale: 1.05 }}
@@ -252,7 +267,7 @@ export default function DeveloperSection() {
               whileInView={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5, delay: 0.5 }}
               whileHover={{ x: 2, scale: 1.02 }}
-              className="col-span-1 row-span-2 rounded-xl border border-white/10 bg-[repeating-linear-gradient(135deg,rgba(255,255,255,0.06)_0px,rgba(255,255,255,0.06)_2px,transparent_2px,transparent_6px)] transition-all hover:border-white/20"
+              className="col-span-1 row-span-2 rounded-xl border border-white/10 bg-gradient-to-br from-cyan-500/5 to-purple-500/5 backdrop-blur-lg transition-all hover:border-white/20"
             />
           </div>
         </div>
@@ -262,7 +277,7 @@ export default function DeveloperSection() {
         initial={{ scaleX: 0 }}
         whileInView={{ scaleX: 1 }}
         transition={{ duration: 0.8, delay: 0.3 }}
-        className="mt-8 h-px w-full bg-[linear-gradient(90deg,transparent,rgba(255,255,255,0.15),transparent)] origin-center"
+        className="mt-12 h-px w-full bg-gradient-to-r from-transparent via-white/15 to-transparent origin-center"
       />
     </section>
   );

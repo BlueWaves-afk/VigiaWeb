@@ -13,34 +13,48 @@ import {
   Network,
   LineChart,
   BotMessageSquare,
+  Gauge, // new: speed icon
 } from "lucide-react";
 import type { JSX } from "react/jsx-runtime";
 
-const V2XDemo        = dynamic(() => import("../../components/V2XDemo"), { ssr: false });
-const SensorFusion   = dynamic(() => import("../../components/sensor-fusion"), { ssr: false });
-const DBSCANDemo     = dynamic(() => import("../../components/DBSCANDemo"), { ssr: false });
-const ForecastDemo   = dynamic(() => import("../../components/ForecastDemo"), { ssr: false });
-const ArgusAegisDemo = dynamic(() => import("../../components/ArgusAegisDemo"), { ssr: false });
+// —— Lazy-load demo panels (no SSR) ——
+const V2XDemo           = dynamic(() => import("../../components/V2XDemo"), { ssr: false });
+const SensorFusion      = dynamic(() => import("../../components/sensor-fusion"), { ssr: false });
+const DBSCANDemo        = dynamic(() => import("../../components/DBSCANDemo"), { ssr: false });
+const ForecastDemo      = dynamic(() => import("../../components/ForecastDemo"), { ssr: false });
+const ArgusAegisDemo    = dynamic(() => import("../../components/ArgusAegisDemo"), { ssr: false });
+// NEW: Browser ONNX demo (speed-only FPS)
+const ArgusBrowserDemo  = dynamic(() => import("../../components/ArgusBrowserDemo"), { ssr: false });
 const CopilotGeoRAG  = dynamic(() => import("../../components/CopilotGeoRAG"), { ssr: false });
 
-type TabKey = "argus" | "v2x" | "sensor" | "dbscan" | "forecast" | "copilot";
+type TabKey =
+  | "argus"
+  | "v2x"
+  | "sensor"
+  | "dbscan"
+  | "forecast"
+  | "copilot"
+  | "argus_web"; // NEW
 
 const NAV: { key: TabKey; label: string; desc: string }[] = [
-  { key: "argus",    label: "Argus + Aegis",       desc: "Privacy-first perception (blur faces & plates)" },
-  { key: "v2x",      label: "V2X Demo",            desc: "Vehicle ↔ Vehicle alerts over WS/MQTT" },
-  { key: "sensor",   label: "Sensor Perception",   desc: "Multimodal (acoustic + accelerometer)" },
-  { key: "dbscan",   label: "DBSCAN Clustering",   desc: "Cluster & deduplicate reports" },
-  { key: "forecast", label: "Predictive Forecast", desc: "Hazard density projections" },
-  { key: "copilot",  label: "Co-Pilot (Geo-RAG)",  desc: "Generative guidance from geospatial context" },
+  { key: "argus",     label: "Argus + Aegis",        desc: "Privacy-first perception (blur faces & plates)" },
+  { key: "argus_web", label: "Argus Web (ONNX)",     desc: "Browser ONNX/WebGPU speed (FPS) demo" }, // NEW
+  { key: "v2x",       label: "V2X Demo",             desc: "Vehicle ↔ Vehicle alerts over WS/MQTT" },
+  { key: "sensor",    label: "Sensor Perception",    desc: "Multimodal (acoustic + accelerometer)" },
+  { key: "dbscan",    label: "DBSCAN Clustering",    desc: "Cluster & deduplicate reports" },
+  { key: "forecast",  label: "Predictive Forecast",  desc: "Hazard density projections" },
+  { key: "copilot",   label: "Co-Pilot (Geo-RAG)",   desc: "Generative guidance from geospatial context" },
 ];
 
+// Icons for collapsed state
 const ICONS: Record<TabKey, JSX.Element> = {
-  argus:    <Shield size={18} />,
-  v2x:      <RadioTower size={18} />,
-  sensor:   <Waves size={18} />,
-  dbscan:   <Network size={18} />,
-  forecast: <LineChart size={18} />,
-  copilot:  <BotMessageSquare size={18} />,
+  argus:     <Shield size={18} />,
+  argus_web: <Gauge size={18} />,  // NEW: speedometer icon
+  v2x:       <RadioTower size={18} />,
+  sensor:    <Waves size={18} />,
+  dbscan:    <Network size={18} />,
+  forecast:  <LineChart size={18} />,
+  copilot:   <BotMessageSquare size={18} />,
 };
 
 export default function SandboxPage() {
@@ -68,12 +82,11 @@ export default function SandboxPage() {
       animate={{ width: collapsed ? 72 : 224 }}
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
       className={[
-        "sticky top-24 self-start",                 // align neatly under topbar
+        "sticky top-24 self-start",
         "rounded-2xl border border-white/10",
         "bg-slate-900/80 backdrop-blur-xl",
         "shadow-[0_8px_24px_rgba(0,0,0,.22)]",
         collapsed ? "p-2" : "p-3",
-        // scrollable if needed, but hide scrollbars:
         "max-h-[calc(100vh-8rem)] overflow-y-auto no-scrollbar",
       ].join(" ")}
       style={{ willChange: "width" }}
@@ -159,7 +172,6 @@ export default function SandboxPage() {
     <PageShell
       title="Sandbox"
       subtitle="Interactive demos: V2X, multimodal sensor fusion, clustering, network intelligence, and forecasting."
-    
     >
       {/* Mobile controls */}
       <div className="mb-3 flex items-center gap-2 md:hidden">
@@ -177,7 +189,7 @@ export default function SandboxPage() {
         </button>
       </div>
 
-      {/* Grid: left fixed column + right fluid; align tops; prevent overflow */}
+      {/* Grid */}
       <div
         className="grid items-start gap-6 md:grid-cols-[var(--sidebar)_minmax(0,1fr)]"
         style={gridCols}
@@ -210,23 +222,24 @@ export default function SandboxPage() {
 
         {/* Demo surface */}
         <section className="min-w-0 space-y-6 [&>*]:w-full">
-          {tab === "argus"    && <ArgusAegisDemo />}
-          {tab === "v2x"      && <V2XDemo />}
-          {tab === "sensor"   && <SensorFusion />}
-          {tab === "dbscan"   && <DBSCANDemo />}
-          {tab === "copilot"  && <CopilotGeoRAG />}
-          {tab === "forecast" && <ForecastDemo />}
+          {tab === "argus"     && <ArgusAegisDemo />}
+          {tab === "argus_web" && <ArgusBrowserDemo />} {/* NEW */}
+          {tab === "v2x"       && <V2XDemo />}
+          {tab === "sensor"    && <SensorFusion />}
+          {tab === "dbscan"    && <DBSCANDemo />}
+          {tab === "copilot"   && <CopilotGeoRAG />}
+          {tab === "forecast"  && <ForecastDemo />}
         </section>
       </div>
 
       {/* Hide scrollbars (but keep native scrolling) */}
       <style jsx global>{`
         .no-scrollbar {
-          -ms-overflow-style: none; /* IE/Edge */
-          scrollbar-width: none;    /* Firefox */
+          -ms-overflow-style: none;
+          scrollbar-width: none;
         }
         .no-scrollbar::-webkit-scrollbar {
-          display: none;            /* Chrome/Safari */
+          display: none;
         }
       `}</style>
     </PageShell>

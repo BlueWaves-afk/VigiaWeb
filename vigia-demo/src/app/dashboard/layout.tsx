@@ -12,10 +12,10 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
+  Map as MapIcon,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-
+import { useEffect, useMemo, useState, useCallback } from "react";
+import { motion } from "framer-motion";
 import { signOut } from "@/lib/auth";
 
 type LinkItem = {
@@ -24,23 +24,36 @@ type LinkItem = {
   icon: React.ComponentType<{ className?: string }>;
 };
 
+/** Simple event name to sync collapse across components */
+const SIDEBAR_EVENT = "vigia:sidebar-collapsed";
+
+/** ---- Sidebar ---- */
 function DashSidebar() {
   const pathname = usePathname();
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(false); // first client paint matches SSR (expanded)
 
-  // persist collapsed state
+  // After mount, hydrate from localStorage
   useEffect(() => {
     const v = localStorage.getItem("dashboard.sidebar.collapsed");
     if (v === "1") setCollapsed(true);
   }, []);
-  useEffect(() => {
-    localStorage.setItem("dashboard.sidebar.collapsed", collapsed ? "1" : "0");
-  }, [collapsed]);
+
+  // Broadcast changes so the parent can resize the grid without polling
+  const toggleCollapsed = useCallback(() => {
+    setCollapsed((prev) => {
+      const next = !prev;
+      localStorage.setItem("dashboard.sidebar.collapsed", next ? "1" : "0");
+      window.dispatchEvent(new CustomEvent(SIDEBAR_EVENT, { detail: next }));
+      return next;
+    });
+  }, []);
 
   const links: LinkItem[] = [
     { label: "Overview", href: "/dashboard", icon: LayoutDashboard },
     { label: "Wallet", href: "/dashboard/wallet", icon: Wallet },
     { label: "Argus Demo", href: "/dashboard/demo", icon: Bot },
+    // New: Datasets
+    { label: "Datasets", href: "/dashboard/datasets", icon: MapIcon },
     { label: "Settings", href: "/dashboard/settings", icon: Settings },
   ];
 
@@ -50,19 +63,19 @@ function DashSidebar() {
       animate={{ width: collapsed ? 72 : 224 }}
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
       className={[
-        "sticky top-6 self-start",                // no topbar → sit near top
+        "sticky top-6 self-start",
         "rounded-2xl border border-white/10",
         "bg-slate-900/80 backdrop-blur-xl",
         "shadow-[0_8px_24px_rgba(0,0,0,.22)]",
         collapsed ? "p-2" : "p-3",
-        "max-h-[calc(100vh-3rem)] overflow-y-auto no-scrollbar", // scrollable, but no visible bars
+        "max-h-[calc(100vh-3rem)] overflow-y-auto no-scrollbar",
       ].join(" ")}
       style={{ willChange: "width" }}
     >
       {/* Collapse control */}
       <div className={`mb-2 flex items-center ${collapsed ? "justify-center" : "justify-end"}`}>
         <button
-          onClick={() => setCollapsed((v) => !v)}
+          onClick={toggleCollapsed}
           className="rounded-lg border border-white/10 bg-white/5 p-2 text-white/80 hover:bg-white/10"
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
@@ -89,7 +102,6 @@ function DashSidebar() {
               ].join(" ")}
               title={collapsed ? label : undefined}
             >
-              {/* icon bubble */}
               <div
                 className={[
                   "h-7 w-7 grid place-items-center rounded-md",
@@ -98,8 +110,6 @@ function DashSidebar() {
               >
                 <Icon className="h-[18px] w-[18px]" />
               </div>
-
-              {/* label */}
               {!collapsed && (
                 <div className="min-w-0 text-left leading-snug">
                   <div className={`truncate text-sm font-semibold ${isActive ? "text-slate-900" : "text-white/90"}`}>
@@ -137,47 +147,49 @@ function DashSidebar() {
   );
 }
 
+/** ---- Layout ---- */
 export default function DashboardLayout({ children }: { children: ReactNode }) {
-  const [collapsed, setCollapsed] = useState<boolean>(() => {
-    if (typeof window === "undefined") return false;
-    return localStorage.getItem("dashboard.sidebar.collapsed") === "1";
-  });
+  // First client render matches SSR (expanded = false → 224px)
+  const [collapsed, setCollapsed] = useState(false);
 
-  // keep grid + sidebar widths in lockstep
+  // After mount: hydrate from localStorage and subscribe to sidebar toggle events
+  useEffect(() => {
+    const v = localStorage.getItem("dashboard.sidebar.collapsed");
+    const initial = v === "1";
+    if (initial !== collapsed) setCollapsed(initial);
+
+    const onToggle = (e: Event) => {
+      // detail contains the boolean next state
+      const next = (e as CustomEvent<boolean>).detail;
+      setCollapsed(next);
+    };
+    window.addEventListener(SIDEBAR_EVENT, onToggle as EventListener);
+    return () => window.removeEventListener(SIDEBAR_EVENT, onToggle as EventListener);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // CSS var for grid template; first paint uses 224px → matches SSR markup
   const gridCols = useMemo(
     () => ({ ["--sidebar" as any]: collapsed ? "72px" : "224px" }),
     [collapsed]
   );
 
-  useEffect(() => {
-    const i = setInterval(() => {
-      const v = localStorage.getItem("dashboard.sidebar.collapsed") === "1";
-      setCollapsed(v);
-    }, 150);
-    return () => clearInterval(i);
-  }, []);
-
   return (
     <main className="relative min-h-screen bg-slate-950">
-      {/* soft grid background */}
       <div className="pointer-events-none absolute inset-0 bg-grid" />
 
       <div className="relative mx-auto max-w-7xl px-4 md:px-6 py-6">
         <div
           className="grid items-start gap-6 md:grid-cols-[var(--sidebar)_minmax(0,1fr)]"
+          // prevents hydration warnings if something still differs
+          suppressHydrationWarning
           style={gridCols}
         >
-          {/* Sidebar */}
           <DashSidebar />
-
-          {/* Content */}
-          <section className="min-w-0 space-y-6">
-            {children}
-          </section>
+          <section className="min-w-0 space-y-6">{children}</section>
         </div>
       </div>
 
-      {/* hide scrollbars utility (like sandbox) */}
       <style jsx global>{`
         .no-scrollbar {
           -ms-overflow-style: none;

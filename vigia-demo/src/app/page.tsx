@@ -6,8 +6,8 @@ import FeatureRows from "@/components/FeatureRows";
 import CodeDemo from "@/components/CodeDemo";
 import SiteFooter from "@/components/SiteFooter";
 import DeveloperSection from "@/components/DeveloperSection";
-import ArgusShowcaseSection from "@/components/ArgusShowcaseSection";
-
+import VGTShowcaseSection from "@/components/VGTShowcase";
+import MapSection from "@/components/MapIndiaSection"
 export const metadata = { title: "VIGIA WEB" };
 
 export default function Home() {
@@ -24,8 +24,8 @@ export default function Home() {
       <SonicDemo />
 
       {/* Argus demo (client-only via the wrapper) */}
-      <ArgusShowcaseSection />
-
+      <VGTShowcaseSection />
+      <MapSection/>
       <DeveloperSection />
       <FeatureRows />
       <CodeDemo />
