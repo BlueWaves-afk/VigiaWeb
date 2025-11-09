@@ -2,6 +2,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import * as ort from "onnxruntime-web";
 
 declare global { interface Navigator { gpu?: unknown; hardwareConcurrency?: number } }
@@ -144,33 +145,66 @@ function InfoCarousel({ onClose }: { onClose: () => void }) {
   ];
   const [i, setI] = useState(0);
   return (
-    <div className="mb-4 rounded-2xl border border-white/15 bg-white/5 p-4 text-white/90">
-      <div className="flex items-center justify-between">
+    <motion.div
+      initial={{ opacity: 0, y: -16 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.96 }}
+      transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+      className="mb-4 rounded-2xl border border-white/15 bg-white/5 p-4 text-white/90"
+    >
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.15, duration: 0.3 }}
+        className="flex items-center justify-between"
+      >
         <h3 className="text-lg font-semibold">{slides[i].title}</h3>
         <div className="text-sm text-white/60">{i + 1} / {slides.length}</div>
-      </div>
-      <pre className="mt-2 whitespace-pre-wrap text-white/80">{slides[i].body}</pre>
-      <div className="mt-3 flex items-center gap-2">
-        <button
+      </motion.div>
+      <AnimatePresence mode="wait">
+        <motion.pre
+          key={i}
+          initial={{ opacity: 0, x: 12 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -12 }}
+          transition={{ duration: 0.25 }}
+          className="mt-2 whitespace-pre-wrap text-white/80"
+        >
+          {slides[i].body}
+        </motion.pre>
+      </AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.2, duration: 0.3 }}
+        className="mt-3 flex items-center gap-2"
+      >
+        <motion.button
+          whileHover={{ scale: 1.04, backgroundColor: "rgba(255,255,255,0.1)" }}
+          whileTap={{ scale: 0.96 }}
           onClick={() => setI((p) => (p === 0 ? slides.length - 1 : p - 1))}
-          className="rounded-lg border border-white/15 bg-white/5 px-3 py-1.5 hover:bg-white/10"
+          className="rounded-lg border border-white/15 bg-white/5 px-3 py-1.5"
         >
           ◀ Prev
-        </button>
-        <button
+        </motion.button>
+        <motion.button
+          whileHover={{ scale: 1.04, backgroundColor: "rgba(255,255,255,0.1)" }}
+          whileTap={{ scale: 0.96 }}
           onClick={() => setI((p) => (p + 1) % slides.length)}
-          className="rounded-lg border border-white/15 bg-white/5 px-3 py-1.5 hover:bg-white/10"
+          className="rounded-lg border border-white/15 bg-white/5 px-3 py-1.5"
         >
           Next ▶
-        </button>
-        <button
+        </motion.button>
+        <motion.button
+          whileHover={{ scale: 1.02, y: -2 }}
+          whileTap={{ scale: 0.98 }}
           onClick={onClose}
-          className="ml-auto rounded-xl bg-white px-4 py-2 font-semibold text-slate-900 shadow hover:-translate-y-0.5 transition"
+          className="ml-auto rounded-xl bg-white px-4 py-2 font-semibold text-slate-900 shadow transition"
         >
-          Let’s Go
-        </button>
-      </div>
-    </div>
+          Let's Go
+        </motion.button>
+      </motion.div>
+    </motion.div>
   );
 }
 
@@ -433,10 +467,12 @@ export default function ArgusBrowserDemo() {
   /* UI bits */
   const loadBtn = useCallback(
     (label: string, onClick: () => void, loading: boolean) => (
-      <button
+      <motion.button
+        whileHover={{ scale: 1.03, backgroundColor: "rgba(255,255,255,0.12)" }}
+        whileTap={{ scale: 0.97 }}
         onClick={onClick}
         disabled={loading}
-        className="relative rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-white/90 hover:bg-white/10 disabled:opacity-60"
+        className="relative rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-white/90 disabled:opacity-60"
       >
         {label}
         {loading && (
@@ -450,7 +486,7 @@ export default function ArgusBrowserDemo() {
             100% { transform: translateX(300%); }
           }
         `}</style>
-      </button>
+      </motion.button>
     ),
     []
   );
@@ -471,12 +507,24 @@ export default function ArgusBrowserDemo() {
   const argusLoaded = !!argusSess.current;
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-slate-900/60 backdrop-blur p-4">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.4 }}
+      className="rounded-2xl border border-white/10 bg-slate-900/60 backdrop-blur p-4"
+    >
       {/* Intro carousel (dismiss to reveal controls) */}
-      {showIntro && <InfoCarousel onClose={() => setShowIntro(false)} />}
+      <AnimatePresence>
+        {showIntro && <InfoCarousel onClose={() => setShowIntro(false)} />}
+      </AnimatePresence>
 
       {/* Controls */}
-      <div className="mb-3 grid gap-3 md:grid-cols-2">
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2, duration: 0.35 }}
+        className="mb-3 grid gap-3 md:grid-cols-2"
+      >
         <div className="flex flex-wrap items-center gap-3">
           <label className="text-white/80 text-sm">
             YOLO model:
@@ -504,9 +552,14 @@ export default function ArgusBrowserDemo() {
           {loadBtn(argusLoaded ? "Reload ARGUS" : "Load ARGUS", loadArgus, loadingArgus)}
           <span className="text-xs text-white/60">EP: {argusProvider.current || "…"}</span>
         </div>
-      </div>
+      </motion.div>
 
-      <div className="mb-3 flex flex-wrap items-center gap-3">
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3, duration: 0.35 }}
+        className="mb-3 flex flex-wrap items-center gap-3"
+      >
         <label className="text-white/80 text-sm">
           Img Size:
           <input
@@ -518,19 +571,23 @@ export default function ArgusBrowserDemo() {
         </label>
 
         {!running ? (
-          <button
+          <motion.button
+            whileHover={{ scale: 1.03, y: -1 }}
+            whileTap={{ scale: 0.97 }}
             onClick={start}
-            className="rounded-xl bg-white px-4 py-2 font-semibold text-slate-900 shadow hover:-translate-y-0.5 transition"
+            className="rounded-xl bg-white px-4 py-2 font-semibold text-slate-900 shadow transition"
           >
             Start
-          </button>
+          </motion.button>
         ) : (
-          <button
+          <motion.button
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.97 }}
             onClick={stop}
             className="rounded-xl bg-red-500/90 px-4 py-2 font-semibold text-white hover:bg-red-500 transition"
           >
             Stop
-          </button>
+          </motion.button>
         )}
 
         {/* Optional: load a custom file */}
@@ -553,19 +610,34 @@ export default function ArgusBrowserDemo() {
             className="ml-2 text-white/80"
           />
         </label>
-      </div>
+      </motion.div>
 
       {/* Diff / comparison card */}
-      <div className="mb-4 grid gap-4 md:grid-cols-3">
-        <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4, duration: 0.35 }}
+        className="mb-4 grid gap-4 md:grid-cols-3"
+      >
+        <motion.div
+          initial={{ opacity: 0, scale: 0.96 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.5, duration: 0.3 }}
+          className="rounded-xl border border-white/10 bg-white/5 p-4"
+        >
           <div className="mb-2 text-sm font-semibold text-white/80">Input pipeline</div>
           <div className="flex items-center justify-between text-sm">
             <span className="text-white/70">Approx FPS</span>
             <span className="tabular-nums">{card.inputFPS.toFixed(1)} fps</span>
           </div>
-        </div>
+        </motion.div>
 
-        <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.96 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.6, duration: 0.3 }}
+          className="rounded-xl border border-white/10 bg-white/5 p-4"
+        >
           <div className="mb-1 text-sm font-semibold text-emerald-300">YOLO ({card.yolo.provider})</div>
           {statLine("Infer last/avg", card.yolo.infLast, card.yolo.infAvg)}
           {statLine("E2E last/avg", card.yolo.e2eLast, card.yolo.e2eAvg)}
@@ -578,9 +650,14 @@ export default function ArgusBrowserDemo() {
             <span className="tabular-nums">{card.yolo.fpsE2E.toFixed(1)} fps</span>
           </div>
           <div className="mt-1 text-xs text-white/60">Frames: {card.yolo.frames}</div>
-        </div>
+        </motion.div>
 
-        <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.96 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.7, duration: 0.3 }}
+          className="rounded-xl border border-white/10 bg-white/5 p-4"
+        >
           <div className="mb-1 text-sm font-semibold text-sky-300">ARGUS v8x ({card.argus.provider})</div>
           {statLine("Infer last/avg", card.argus.infLast, card.argus.infAvg)}
           {statLine("E2E last/avg", card.argus.e2eLast, card.argus.e2eAvg)}
@@ -593,8 +670,8 @@ export default function ArgusBrowserDemo() {
             <span className="tabular-nums">{card.argus.fpsE2E.toFixed(1)} fps</span>
           </div>
           <div className="mt-1 text-xs text-white/60">Frames: {card.argus.frames}</div>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
 
       {/* Hidden source video (controls disabled) */}
       <video
@@ -607,25 +684,39 @@ export default function ArgusBrowserDemo() {
       />
 
       {/* 3-panel surface: Input / YOLO / ARGUS (each with its own stats overlay) */}
-      <div className="grid gap-4 lg:grid-cols-3">
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5, duration: 0.4 }}
+        className="grid gap-4 lg:grid-cols-3"
+      >
         {/* INPUT panel */}
-        <div className="rounded-xl border border-white/10 bg-black/40 p-3">
+        <motion.div
+          whileHover={{ scale: 1.01, borderColor: "rgba(255,255,255,0.25)" }}
+          className="rounded-xl border border-white/10 bg-black/40 p-3"
+        >
           <div className="mb-2 text-sm text-white/70">1) Input (no processing) — stats overlay</div>
           <canvas ref={inputCanvasRef} className="h-auto w-full rounded-lg border border-white/10 bg-black" />
-        </div>
+        </motion.div>
 
         {/* YOLO panel */}
-        <div className="rounded-xl border border-white/10 bg-black/40 p-3">
+        <motion.div
+          whileHover={{ scale: 1.01, borderColor: "rgba(255,255,255,0.25)" }}
+          className="rounded-xl border border-white/10 bg-black/40 p-3"
+        >
           <div className="mb-2 text-sm text-white/70">2) YOLO — stats overlay</div>
           <canvas ref={yoloCanvasRef} className="h-auto w-full rounded-lg border border-white/10 bg-black" />
-        </div>
+        </motion.div>
 
         {/* ARGUS panel */}
-        <div className="rounded-xl border border-white/10 bg-black/40 p-3">
+        <motion.div
+          whileHover={{ scale: 1.01, borderColor: "rgba(255,255,255,0.25)" }}
+          className="rounded-xl border border-white/10 bg-black/40 p-3"
+        >
           <div className="mb-2 text-sm text-white/70">3) ARGUS v8x — stats overlay</div>
           <canvas ref={argusCanvasRef} className="h-auto w-full rounded-lg border border-white/10 bg-black" />
-        </div>
-      </div>
-    </div>
+        </motion.div>
+      </motion.div>
+    </motion.div>
   );
 }

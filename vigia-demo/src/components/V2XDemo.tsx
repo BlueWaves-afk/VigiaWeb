@@ -20,6 +20,10 @@ const FIXED_RADIUS = 130;                    // (1) same coverage radius for all
 const HAZARD_RADIUS = 18;                    // visual ring for hazard
 const SPLIT = { publisher: 0.7, validators: 0.3 }; // (2) used only on confirmed hazards
 const BUCKET_MS = 2000;
+// DBSCAN settings (pixels)
+const DBSCAN_EPS = 32; // neighborhood radius
+const DBSCAN_MINPTS = 3; // min points for a dense region
+const REPORT_RETENTION_MS = 6000; // keep recent report points for clustering
 
 /** ====== Types ====== */
 type Role = "contributor" | "developer";
@@ -46,6 +50,9 @@ type Hazard = {
   contradicted: boolean;          // if any vehicle flags "not a hazard"
   rewarded: boolean;              // true once minted (only when confirmed)
 };
+
+type ReportPoint = { x: number; y: number; vid: string; ts: number; src: string };
+type Cluster = { id: string; cx: number; cy: number; size: number };
 
 type RightPaneTab = "console" | "charts";
 
@@ -90,6 +97,12 @@ export default function V2XDemo() {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const vehicleElsRef = useRef<Record<string, { large?: SVGCircleElement | null; small?: SVGCircleElement | null; text?: SVGTextElement | null }>>({});
   const hazardElsRef = useRef<Record<string, { dot?: SVGCircleElement | null; ring?: SVGCircleElement | null; text?: SVGTextElement | null }>>({});
+  const clusterElsRef = useRef<Record<string, { dot?: SVGCircleElement | null; ring?: SVGCircleElement | null; text?: SVGTextElement | null }>>({});
+
+  // DBSCAN buffers
+  const reportPtsRef = useRef<ReportPoint[]>([]);
+  const clustersRef = useRef<Cluster[]>([]);
+  const lastClusterRunRef = useRef<number>(0);
 
   /** Event feed & charts */
   const [feed, setFeed] = useState<FeedItem[]>([]);
@@ -244,6 +257,7 @@ export default function V2XDemo() {
           // first report
           hz.reporters.add(closest.id);
           recordMessage("REPORT", `HAZARD REPORTED • ${closest.id} reported ${hz.id} (no mint yet)`);
+          reportPtsRef.current.push({ x: hz.x + rand(-2,2), y: hz.y + rand(-2,2), vid: closest.id, ts: currentTime, src: hz.id });
 
           // broadcast V2X to others (no mint)
           for (const other of inRange) {
@@ -262,6 +276,7 @@ export default function V2XDemo() {
             } else {
               hz.reporters.add(closest.id);
               recordMessage("CONFIRM", `CONFIRM • ${closest.id} confirmed ${hz.id}`);
+                reportPtsRef.current.push({ x: hz.x + rand(-2,2), y: hz.y + rand(-2,2), vid: closest.id, ts: currentTime, src: hz.id });
             }
           }
         }
@@ -303,6 +318,15 @@ export default function V2XDemo() {
     }
 
     hazardsRef.current = newHazards;
+
+    // Maintain sliding window of report points
+    reportPtsRef.current = reportPtsRef.current.filter((p) => currentTime - p.ts <= REPORT_RETENTION_MS);
+
+    // Run DBSCAN periodically
+    if (currentTime - lastClusterRunRef.current > 400) {
+      lastClusterRunRef.current = currentTime;
+      clustersRef.current = runDbscan(reportPtsRef.current, DBSCAN_EPS, DBSCAN_MINPTS);
+    }
 
     // flush buffered feed items at a lower frequency to avoid frequent re-renders
     const flushNow = performance.now();
@@ -352,6 +376,25 @@ export default function V2XDemo() {
           if (e.text) {
             e.text.setAttribute("x", String(Math.round((h.x + 14) * 100) / 100));
             e.text.setAttribute("y", String(Math.round((h.y - 12) * 100) / 100));
+          }
+        }
+      }
+      // clusters
+      const cEls = clusterElsRef.current;
+      for (const c of clustersRef.current) {
+        const e = cEls[c.id];
+        if (e) {
+          if (e.dot) {
+            e.dot.setAttribute("cx", String(Math.round(c.cx * 100) / 100));
+            e.dot.setAttribute("cy", String(Math.round(c.cy * 100) / 100));
+          }
+          if (e.ring) {
+            e.ring.setAttribute("cx", String(Math.round(c.cx * 100) / 100));
+            e.ring.setAttribute("cy", String(Math.round(c.cy * 100) / 100));
+          }
+          if (e.text) {
+            e.text.setAttribute("x", String(Math.round((c.cx + 12) * 100) / 100));
+            e.text.setAttribute("y", String(Math.round((c.cy - 10) * 100) / 100));
           }
         }
       }
@@ -462,6 +505,24 @@ export default function V2XDemo() {
         </div>
       ),
     },
+    {
+      title: "DBSCAN clustering (why it matters)",
+      body: (
+        <div className="space-y-3 text-white/85">
+          <p>
+            Recent report points (≤{REPORT_RETENTION_MS / 1000}s) are clustered with <b>DBSCAN</b> using
+            <code> eps={DBSCAN_EPS}</code> and <code>minPts={DBSCAN_MINPTS}</code>. DBSCAN finds dense regions without
+            needing a preset number of clusters.
+          </p>
+          <ul className="list-disc pl-5 space-y-2">
+            <li><b>Robust to noise</b>: Single/isolated reports are ignored.</li>
+            <li><b>Adaptive</b>: Forms clusters only where multiple vehicles agree.</li>
+            <li><b>Operational</b>: Fast on-edge via grid bucketing; no cloud required.</li>
+          </ul>
+          <p>Clusters are drawn as <b className="text-amber-300">gold rings</b> labeled Ck (n).</p>
+        </div>
+      ),
+    },
   ];
 
   const Canvas = (
@@ -541,6 +602,53 @@ export default function V2XDemo() {
 
   {/* Canvas */}
   <svg ref={(el) => { svgRef.current = el; }} viewBox={`0 0 ${WORLD.w} ${WORLD.h}`} className="w-full rounded-xl">
+        {/* DBSCAN clusters (gold) */}
+        {clustersRef.current.map((c) => (
+          <g key={c.id} opacity={0.95}>
+            <circle
+              ref={(el) => {
+                if (el) {
+                  clusterElsRef.current[c.id] = clusterElsRef.current[c.id] || {};
+                  clusterElsRef.current[c.id].dot = el;
+                }
+              }}
+              cx={c.cx}
+              cy={c.cy}
+              r={6}
+              fill="#fbbf24"
+            />
+            <circle
+              ref={(el) => {
+                if (el) {
+                  clusterElsRef.current[c.id] = clusterElsRef.current[c.id] || {};
+                  clusterElsRef.current[c.id].ring = el;
+                }
+              }}
+              cx={c.cx}
+              cy={c.cy}
+              r={DBSCAN_EPS}
+              fill="none"
+              stroke="#fbbf24"
+              strokeDasharray="6 8"
+              opacity={0.65}
+            />
+            <text
+              ref={(el) => {
+                if (el) {
+                  clusterElsRef.current[c.id] = clusterElsRef.current[c.id] || {};
+                  clusterElsRef.current[c.id].text = el;
+                }
+              }}
+              x={c.cx + 12}
+              y={c.cy - 10}
+              fontSize={12}
+              fill="#fde68a"
+              opacity={0.95}
+            >
+              {`C${c.id} (${c.size})`}
+            </text>
+          </g>
+        ))}
         {/* Hazards */}
         {hazards.map((h) => {
           const status = h.contradicted
@@ -848,4 +956,85 @@ function Bubble({ children }: { children: React.ReactNode }) {
       {children}
     </div>
   );
+}
+
+/** ===== DBSCAN Implementation (lightweight) ===== */
+function runDbscan(points: ReportPoint[], eps: number, minPts: number): Cluster[] {
+  if (!points.length) return [];
+  const eps2 = eps * eps;
+  const labels: number[] = new Array(points.length).fill(-1); // -1 unvisited, -2 noise, >=0 cluster id
+
+  // simple grid bucketing to accelerate neighbor search
+  const cellSize = eps;
+  const grid = new Map<string, number[]>();
+  function key(x: number, y: number) {
+    return `${Math.floor(x / cellSize)}|${Math.floor(y / cellSize)}`;
+  }
+  points.forEach((p, idx) => {
+    const k = key(p.x, p.y);
+    const arr = grid.get(k);
+    if (arr) arr.push(idx); else grid.set(k, [idx]);
+  });
+
+  function regionQuery(i: number): number[] {
+    const p = points[i];
+    const cx = Math.floor(p.x / cellSize);
+    const cy = Math.floor(p.y / cellSize);
+    const out: number[] = [];
+    for (let gx = cx - 1; gx <= cx + 1; gx++) {
+      for (let gy = cy - 1; gy <= cy + 1; gy++) {
+        const arr = grid.get(`${gx}|${gy}`);
+        if (!arr) continue;
+        for (const j of arr) {
+          const q = points[j];
+          const dx = p.x - q.x;
+            const dy = p.y - q.y;
+          if (dx * dx + dy * dy <= eps2) out.push(j);
+        }
+      }
+    }
+    return out;
+  }
+
+  let clusterId = 0;
+  for (let i = 0; i < points.length; i++) {
+    if (labels[i] !== -1) continue; // already processed
+    const neighbors = regionQuery(i);
+    if (neighbors.length < minPts) {
+      labels[i] = -2; // noise
+      continue;
+    }
+    // start new cluster
+    const cid = clusterId++;
+    labels[i] = cid;
+    const queue = neighbors.filter((n) => n !== i);
+    while (queue.length) {
+      const j = queue.pop()!;
+      if (labels[j] === -2) labels[j] = cid; // noise becomes border
+      if (labels[j] !== -1) continue;
+      labels[j] = cid;
+      const nbs = regionQuery(j);
+      if (nbs.length >= minPts) {
+        for (const nb of nbs) if (labels[nb] === -1) queue.push(nb);
+      }
+    }
+  }
+
+  // aggregate clusters
+  const acc: Record<number, { sumX: number; sumY: number; count: number }> = {};
+  points.forEach((p, i) => {
+    const l = labels[i];
+    if (l >= 0) {
+      const slot = acc[l] || (acc[l] = { sumX: 0, sumY: 0, count: 0 });
+      slot.sumX += p.x;
+      slot.sumY += p.y;
+      slot.count += 1;
+    }
+  });
+  return Object.entries(acc).map(([cid, v]) => ({
+    id: cid,
+    cx: v.sumX / v.count,
+    cy: v.sumY / v.count,
+    size: v.count,
+  }));
 }

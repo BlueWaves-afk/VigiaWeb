@@ -22,13 +22,13 @@ const V2XDemo           = dynamic(() => import("../../components/V2XDemo"), { ss
 const SensorFusion      = dynamic(() => import("../../components/sensor-fusion"), { ssr: false });
 const DBSCANDemo        = dynamic(() => import("../../components/DBSCANDemo"), { ssr: false });
 const ForecastDemo      = dynamic(() => import("../../components/ForecastDemo"), { ssr: false });
-const ArgusAegisDemo    = dynamic(() => import("../../components/ArgusAegisDemo"), { ssr: false });
+const ArgusAegisDemo    = dynamic(() => import("../../components/AegisDemo"), { ssr: false });
 // NEW: Browser ONNX demo (speed-only FPS)
 const ArgusBrowserDemo  = dynamic(() => import("../../components/ArgusBrowserDemo"), { ssr: false });
 const CopilotGeoRAG  = dynamic(() => import("../../components/CopilotGeoRAG"), { ssr: false });
 
 type TabKey =
-  | "argus"
+  | "aegis"
   | "v2x"
   | "sensor"
   | "dbscan"
@@ -37,7 +37,7 @@ type TabKey =
   | "argus_web"; // NEW
 
 const NAV: { key: TabKey; label: string; desc: string }[] = [
-  { key: "argus",     label: "Argus + Aegis",        desc: "Privacy-first perception (blur faces & plates)" },
+  { key: "aegis",     label: "Aegis",        desc: "Privacy-first perception (blur faces & plates)" },
   { key: "argus_web", label: "Argus Web (ONNX)",     desc: "Browser ONNX/WebGPU speed (FPS) demo" }, // NEW
   { key: "v2x",       label: "V2X Demo",             desc: "Vehicle ↔ Vehicle alerts over WS/MQTT" },
   { key: "sensor",    label: "Sensor Perception",    desc: "Multimodal (acoustic + accelerometer)" },
@@ -48,7 +48,7 @@ const NAV: { key: TabKey; label: string; desc: string }[] = [
 
 // Icons for collapsed state
 const ICONS: Record<TabKey, JSX.Element> = {
-  argus:     <Shield size={18} />,
+  aegis:     <Shield size={18} />,
   argus_web: <Gauge size={18} />,  // NEW: speedometer icon
   v2x:       <RadioTower size={18} />,
   sensor:    <Waves size={18} />,
@@ -222,7 +222,7 @@ export default function SandboxPage() {
 
         {/* Demo surface */}
         <section className="min-w-0 space-y-6 [&>*]:w-full">
-          {tab === "argus"     && <ArgusAegisDemo />}
+          {tab === "aegis"     && <ArgusAegisDemo />}
           {tab === "argus_web" && <ArgusBrowserDemo />} {/* NEW */}
           {tab === "v2x"       && <V2XDemo />}
           {tab === "sensor"    && <SensorFusion />}

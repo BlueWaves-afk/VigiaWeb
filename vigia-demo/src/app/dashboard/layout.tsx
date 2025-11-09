@@ -7,7 +7,6 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   Wallet,
-  Bot,
   Settings,
   LogOut,
   ChevronLeft,
@@ -24,35 +23,13 @@ type LinkItem = {
   icon: React.ComponentType<{ className?: string }>;
 };
 
-/** Simple event name to sync collapse across components */
-const SIDEBAR_EVENT = "vigia:sidebar-collapsed";
-
 /** ---- Sidebar ---- */
-function DashSidebar() {
+function DashSidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void }) {
   const pathname = usePathname();
-  const [collapsed, setCollapsed] = useState(false); // first client paint matches SSR (expanded)
-
-  // After mount, hydrate from localStorage
-  useEffect(() => {
-    const v = localStorage.getItem("dashboard.sidebar.collapsed");
-    if (v === "1") setCollapsed(true);
-  }, []);
-
-  // Broadcast changes so the parent can resize the grid without polling
-  const toggleCollapsed = useCallback(() => {
-    setCollapsed((prev) => {
-      const next = !prev;
-      localStorage.setItem("dashboard.sidebar.collapsed", next ? "1" : "0");
-      window.dispatchEvent(new CustomEvent(SIDEBAR_EVENT, { detail: next }));
-      return next;
-    });
-  }, []);
 
   const links: LinkItem[] = [
     { label: "Overview", href: "/dashboard", icon: LayoutDashboard },
     { label: "Wallet", href: "/dashboard/wallet", icon: Wallet },
-    { label: "Argus Demo", href: "/dashboard/demo", icon: Bot },
-    // New: Datasets
     { label: "Datasets", href: "/dashboard/datasets", icon: MapIcon },
     { label: "Settings", href: "/dashboard/settings", icon: Settings },
   ];
@@ -75,7 +52,7 @@ function DashSidebar() {
       {/* Collapse control */}
       <div className={`mb-2 flex items-center ${collapsed ? "justify-center" : "justify-end"}`}>
         <button
-          onClick={toggleCollapsed}
+          onClick={onToggle}
           className="rounded-lg border border-white/10 bg-white/5 p-2 text-white/80 hover:bg-white/10"
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
@@ -157,15 +134,15 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     const v = localStorage.getItem("dashboard.sidebar.collapsed");
     const initial = v === "1";
     if (initial !== collapsed) setCollapsed(initial);
-
-    const onToggle = (e: Event) => {
-      // detail contains the boolean next state
-      const next = (e as CustomEvent<boolean>).detail;
-      setCollapsed(next);
-    };
-    window.addEventListener(SIDEBAR_EVENT, onToggle as EventListener);
-    return () => window.removeEventListener(SIDEBAR_EVENT, onToggle as EventListener);
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleToggle = useCallback(() => {
+    setCollapsed((prev) => {
+      const next = !prev;
+      localStorage.setItem("dashboard.sidebar.collapsed", next ? "1" : "0");
+      return next;
+    });
   }, []);
 
   // CSS var for grid template; first paint uses 224px → matches SSR markup
@@ -185,7 +162,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           suppressHydrationWarning
           style={gridCols}
         >
-          <DashSidebar />
+          <DashSidebar collapsed={collapsed} onToggle={handleToggle} />
           <section className="min-w-0 space-y-6">{children}</section>
         </div>
       </div>

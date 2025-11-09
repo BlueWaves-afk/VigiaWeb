@@ -1,0 +1,218 @@
+[
+  {
+    "model": "yolo",
+    "batch": 1,
+    "file_size_bytes": 12851094,
+    "load_time_ms": 112.17274999944493,
+    "p50_ms": 148.83891700446839,
+    "p90_ms": 277.0536878015264,
+    "p99_ms": 848.6601549968996,
+    "mean_ms": 194.60884394458844,
+    "std_ms": 222.2103753614878,
+    "throughput_img_per_s": 5.134648991959798,
+    "proc_peak_rss_bytes": 116686848,
+    "provider": [
+      "CPUExecutionProvider"
+    ],
+    "n_runs": 200,
+    "warmup": 20
+  },
+  {
+    "model": "yolo",
+    "batch": 2,
+    "file_size_bytes": 12851094,
+    "load_time_ms": 112.17274999944493,
+    "p50_ms": 89.8920210020151,
+    "p90_ms": 161.80809560610214,
+    "p99_ms": 410.3578865720188,
+    "mean_ms": 114.36567872056912,
+    "std_ms": 62.04895302817542,
+    "throughput_img_per_s": 17.478187149353715,
+    "proc_peak_rss_bytes": 62308352,
+    "provider": [
+      "CPUExecutionProvider"
+    ],
+    "n_runs": 200,
+    "warmup": 20
+  },
+  {
+    "model": "yolo",
+    "batch": 4,
+    "file_size_bytes": 12851094,
+    "load_time_ms": 112.17274999944493,
+    "p50_ms": 102.85110449331114,
+    "p90_ms": 159.42472940223522,
+    "p99_ms": 401.40735883702234,
+    "mean_ms": 118.27040619042236,
+    "std_ms": 60.85974035248738,
+    "throughput_img_per_s": 33.80431530149543,
+    "proc_peak_rss_bytes": 76480512,
+    "provider": [
+      "CPUExecutionProvider"
+    ],
+    "n_runs": 200,
+    "warmup": 20
+  },
+  {
+    "model": "yolo",
+    "batch": 8,
+    "file_size_bytes": 12851094,
+    "load_time_ms": 112.17274999944493,
+    "p50_ms": 100.54960400157142,
+    "p90_ms": 190.29552500724094,
+    "p99_ms": 337.00356992296173,
+    "mean_ms": 120.93699979544908,
+    "std_ms": 59.521911558878195,
+    "throughput_img_per_s": 66.10370069690775,
+    "proc_peak_rss_bytes": 69632000,
+    "provider": [
+      "CPUExecutionProvider"
+    ],
+    "n_runs": 200,
+    "warmup": 20
+  },
+  {
+    "model": "argus_v8x",
+    "batch": 1,
+    "file_size_bytes": 15440590,
+    "load_time_ms": 141.00941699871328,
+    "p50_ms": 91.05047900811769,
+    "p90_ms": 189.5365661010146,
+    "p99_ms": 272.0773638317765,
+    "mean_ms": 116.73763457016321,
+    "std_ms": 49.91663034774729,
+    "throughput_img_per_s": 8.561146221922675,
+    "proc_peak_rss_bytes": 128073728,
+    "provider": [
+      "CPUExecutionProvider"
+    ],
+    "n_runs": 200,
+    "warmup": 20
+  },
+  {
+    "model": "argus_v8x",
+    "batch": 2,
+    "file_size_bytes": 15440590,
+    "load_time_ms": 141.00941699871328,
+    "p50_ms": 139.6528129989747,
+    "p90_ms": 200.97729969565984,
+    "p99_ms": 424.640136568923,
+    "mean_ms": 157.95214732497698,
+    "std_ms": 72.46862494922624,
+    "throughput_img_per_s": 12.653509877627197,
+    "proc_peak_rss_bytes": 76775424,
+    "provider": [
+      "CPUExecutionProvider"
+    ],
+    "n_runs": 200,
+    "warmup": 20
+  },
+  {
+    "model": "argus_v8x",
+    "batch": 4,
+    "file_size_bytes": 15440590,
+    "load_time_ms": 141.00941699871328,
+    "p50_ms": 87.26527099497616,
+    "p90_ms": 154.78580770723056,
+    "p99_ms": 248.65174582402474,
+    "mean_ms": 111.29915168501611,
+    "std_ms": 58.47840227424057,
+    "throughput_img_per_s": 35.921947713266185,
+    "proc_peak_rss_bytes": 83394560,
+    "provider": [
+      "CPUExecutionProvider"
+    ],
+    "n_runs": 200,
+    "warmup": 20
+  },
+  {
+    "model": "argus_v8x",
+    "batch": 8,
+    "file_size_bytes": 15440590,
+    "load_time_ms": 141.00941699871328,
+    "p50_ms": 119.36143750062911,
+    "p90_ms": 243.797304504551,
+    "p99_ms": 513.5399274941299,
+    "mean_ms": 149.52592271525646,
+    "std_ms": 94.83376944650601,
+    "throughput_img_per_s": 53.45597150283103,
+    "proc_peak_rss_bytes": 83230720,
+    "provider": [
+      "CPUExecutionProvider"
+    ],
+    "n_runs": 200,
+    "warmup": 20
+  },
+  {
+    "model": "ultraface",
+    "batch": 1,
+    "file_size_bytes": 458144,
+    "load_time_ms": 73.86816700454801,
+    "p50_ms": 3.3351040037814528,
+    "p90_ms": 3.679591297986917,
+    "p99_ms": 5.060959246475229,
+    "mean_ms": 3.39796519067022,
+    "std_ms": 0.7086964565829542,
+    "throughput_img_per_s": 293.1396349493072,
+    "proc_peak_rss_bytes": 80789504,
+    "provider": [
+      "CPUExecutionProvider"
+    ],
+    "n_runs": 200,
+    "warmup": 20
+  },
+  {
+    "model": "ultraface",
+    "batch": 2,
+    "file_size_bytes": 458144,
+    "load_time_ms": 73.86816700454801,
+    "p50_ms": 3.2318124940502457,
+    "p90_ms": 3.519266711373348,
+    "p99_ms": 4.8140086540661216,
+    "mean_ms": 3.2327284856000915,
+    "std_ms": 0.6485928022907321,
+    "throughput_img_per_s": 616.4658804187369,
+    "proc_peak_rss_bytes": 80822272,
+    "provider": [
+      "CPUExecutionProvider"
+    ],
+    "n_runs": 200,
+    "warmup": 20
+  },
+  {
+    "model": "ultraface",
+    "batch": 4,
+    "file_size_bytes": 458144,
+    "load_time_ms": 73.86816700454801,
+    "p50_ms": 3.231916496588383,
+    "p90_ms": 3.5959170025307685,
+    "p99_ms": 6.025659674487539,
+    "mean_ms": 3.2944454504468013,
+    "std_ms": 0.8589190644906157,
+    "throughput_img_per_s": 1210.1197016254891,
+    "proc_peak_rss_bytes": 80822272,
+    "provider": [
+      "CPUExecutionProvider"
+    ],
+    "n_runs": 200,
+    "warmup": 20
+  },
+  {
+    "model": "ultraface",
+    "batch": 8,
+    "file_size_bytes": 458144,
+    "load_time_ms": 73.86816700454801,
+    "p50_ms": 3.4989380001206882,
+    "p90_ms": 5.109241290483623,
+    "p99_ms": 6.496760328009256,
+    "mean_ms": 3.8052404299378395,
+    "std_ms": 0.8318383875350709,
+    "throughput_img_per_s": 2091.3318389054316,
+    "proc_peak_rss_bytes": 80822272,
+    "provider": [
+      "CPUExecutionProvider"
+    ],
+    "n_runs": 200,
+    "warmup": 20
+  }
+]

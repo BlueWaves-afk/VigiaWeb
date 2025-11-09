@@ -9,12 +9,16 @@ export default function PageShell({
   actions,
   children,
   bannerSrc,
+  breadcrumbs,
+  heroBadge,
 }: {
   title: string;
   subtitle?: string;
   actions?: React.ReactNode; // e.g., filters / refresh button row
   children: React.ReactNode;
   bannerSrc?: string;
+  breadcrumbs?: Array<{ label: string; href?: string }>;
+  heroBadge?: React.ReactNode;
 }) {
   return (
     <main className="relative min-h-screen bg-slate-950 text-white">
@@ -28,27 +32,74 @@ export default function PageShell({
       <TopBar />
 
       {/* Content container */}
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: [0.22,1,0.36,1] }} className="relative z-0 mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 pt-28 pb-16">
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+        className="relative z-0 mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 pt-24 pb-16 md:pt-28"
+      >
         {bannerSrc && (
-          <div className="mb-6 w-full flex justify-center">
-            <img src={bannerSrc} alt="banner" className="w-full max-w-4xl rounded-xl object-cover shadow-lg" />
+          <div className="mb-6 w-full">
+            <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 shadow-lg">
+              <img
+                src={bannerSrc}
+                alt="banner"
+                className="h-48 w-full object-cover sm:h-60 md:h-72"
+              />
+            </div>
           </div>
         )}
-        <header className="flex items-start justify-between gap-4">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-white">
-              {title}
-            </h1>
-            {subtitle && (
-              <p className="mt-1 text-sm md:text-base text-white/60 max-w-2xl">
-                {subtitle}
-              </p>
+        {breadcrumbs && breadcrumbs.length > 0 && (
+          <nav className="mb-4 text-xs text-white/60 sm:text-sm" aria-label="Breadcrumb">
+            <ol className="flex flex-wrap items-center gap-1 sm:gap-2">
+              {breadcrumbs.map(({ label, href }, index) => {
+                const isLast = index === breadcrumbs.length - 1;
+                return (
+                  <li key={`${label}-${index}`} className="flex items-center gap-1">
+                    {href && !isLast ? (
+                      <a
+                        href={href}
+                        className="rounded-md bg-white/5 px-2 py-1 text-white/70 transition hover:bg-white/10 hover:text-white"
+                      >
+                        {label}
+                      </a>
+                    ) : (
+                      <span className="px-2 py-1 text-white/50">{label}</span>
+                    )}
+                    {!isLast && <span className="text-white/40">/</span>}
+                  </li>
+                );
+              })}
+            </ol>
+          </nav>
+        )}
+
+        <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="space-y-3">
+            {heroBadge && (
+              <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs uppercase tracking-wider text-cyan-300/80">
+                {heroBadge}
+              </div>
             )}
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
+                {title}
+              </h1>
+              {subtitle && (
+                <p className="mt-2 max-w-2xl text-sm text-white/70 sm:text-base">
+                  {subtitle}
+                </p>
+              )}
+            </div>
           </div>
-          {actions ? <div className="shrink-0">{actions}</div> : null}
+          {actions ? (
+            <div className="flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto">
+              {actions}
+            </div>
+          ) : null}
         </header>
 
-        <div className="mt-8">{children}</div>
+        <div className="mt-8 space-y-6 sm:space-y-8">{children}</div>
       </motion.div>
     </main>
   );

@@ -195,17 +195,24 @@ export default function SonicDemo() {
   }, [pushLog]);
 
   // wheel handler (local to this section)
-  const onWheel = useCallback((e: React.WheelEvent) => {
+  const onWheel = useCallback((event: WheelEvent) => {
     if (!inViewRef.current) return;
-    e.preventDefault(); // keep scroll inside this demo
+    event.preventDefault();
 
-    const meters = Math.max(-50, Math.min(50, -e.deltaY * 0.6));
+    const meters = Math.max(-50, Math.min(50, -event.deltaY * 0.6));
     const { dLat, dLng } = metersToDelta(posRef.current.lat, meters, posRef.current.headingDeg);
     const next = { ...posRef.current, lat: posRef.current.lat + dLat, lng: posRef.current.lng + dLng };
     setPos(next);
 
     ragRef.current?.postMessage({ ...next, isRain: false, city: "bangalore", k: 3 });
   }, []);
+
+  useEffect(() => {
+    const section = sectionRef.current;
+    if (!section) return;
+    section.addEventListener("wheel", onWheel, { passive: false });
+    return () => section.removeEventListener("wheel", onWheel);
+  }, [onWheel]);
 
   // keyboard ↑/↓ support (optional)
   const onKey = useCallback((e: React.KeyboardEvent) => {
@@ -221,12 +228,12 @@ export default function SonicDemo() {
 
   return (
     <section
+      id="copilot-demo"
       ref={sectionRef}
-      onWheel={onWheel}
       onKeyDown={onKey}
       tabIndex={0}
-      className="relative mx-auto mt-28 grid w-full max-w-6xl grid-cols-1 gap-10 rounded-2xl bg-gradient-to-br from-slate-900/60 to-slate-950/80 p-8 ring-1 ring-white/10 backdrop-blur-xl md:grid-cols-2"
-      style={{ scrollMarginTop: "96px" }}
+  className="relative mx-auto mt-28 grid w-full max-w-6xl grid-cols-1 gap-10 rounded-2xl bg-gradient-to-br from-slate-900/60 to-slate-950/80 p-8 ring-1 ring-white/10 backdrop-blur-xl md:grid-cols-2"
+  style={{ scrollMarginTop: "96px", overscrollBehavior: "contain" }}
     >
       {/* Background glow effect */}
       <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-cyan-500/5 via-transparent to-purple-500/5" />
