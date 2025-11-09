@@ -171,7 +171,7 @@ export default function SandboxPage() {
   return (
     <PageShell
       title="Sandbox"
-      subtitle="Interactive demos: V2X, multimodal sensor fusion, clustering, network intelligence, and forecasting."
+      subtitle="Interactive demos, showcasing edge detection, and VIGIA's capabilities. If models don't load, reload the page."
     >
       {/* Mobile controls */}
       <div className="mb-3 flex items-center gap-2 md:hidden">

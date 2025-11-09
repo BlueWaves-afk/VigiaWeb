@@ -139,8 +139,8 @@ function InfoCarousel({ onClose }: { onClose: () => void }) {
       body: "• Infer ms (per frame) and rolling avg\n• E2E ms (draw→preprocess→infer)\n• FPS from averages (1000/avg)\nThese update continuously per model.",
     },
     {
-      title: "ARGUS v8x (PyPI link)",
-      body: "The Python package and docs live here:\nhttps://pypi.org/project/argus-v8x/\n(Use for server/offline experiments; this demo uses ONNXRuntime Web.)",
+      title: "ARGUS V8X (PyPI link)",
+      body: "The Python package and docs live here:\nhttps://pypi.org/project/vigia-argus/\n(Use for server/offline experiments; this demo uses ONNXRuntime Web.)",
     },
   ];
   const [i, setI] = useState(0);

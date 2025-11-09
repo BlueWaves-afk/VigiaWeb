@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 type CopilotMsg = {
@@ -35,6 +35,12 @@ export default function CopilotGeoRAG() {
     },
   ]);
   const [busy, setBusy] = useState(false);
+  const [scrollCount, setScrollCount] = useState(0);
+  const [scrollLocked, setScrollLocked] = useState(false); // Start unlocked
+  const chatWindowRef = useRef<HTMLDivElement>(null);
+  const lastScrollTop = useRef(0);
+
+  const MAX_SCROLLS = 3;
 
   // A couple of pre-baked contexts judges can cycle through
   const presets = useMemo<SimContext[]>(
@@ -68,6 +74,55 @@ export default function CopilotGeoRAG() {
   );
 
   const [presetIdx, setPresetIdx] = useState(0);
+
+  // Track scroll events to unlock after MAX_SCROLLS
+  useEffect(() => {
+    const chatWindow = chatWindowRef.current;
+    if (!chatWindow) return;
+
+    const handleScroll = () => {
+      const currentScrollTop = chatWindow.scrollTop;
+      
+      // Only count scrolls if user actually scrolled (not programmatic)
+      if (Math.abs(currentScrollTop - lastScrollTop.current) > 10) {
+        if (scrollLocked && scrollCount < MAX_SCROLLS) {
+          setScrollCount((prev) => {
+            const newCount = prev + 1;
+            if (newCount >= MAX_SCROLLS) {
+              setScrollLocked(false);
+            }
+            return newCount;
+          });
+        }
+        lastScrollTop.current = currentScrollTop;
+      }
+    };
+
+    chatWindow.addEventListener("scroll", handleScroll);
+    return () => chatWindow.removeEventListener("scroll", handleScroll);
+  }, [scrollCount, scrollLocked]);
+
+  // Prevent wheel events from propagating when locked
+  useEffect(() => {
+    const chatWindow = chatWindowRef.current;
+    if (!chatWindow || !scrollLocked) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      // Allow scrolling within the component
+      const { scrollTop, scrollHeight, clientHeight } = chatWindow;
+      const isAtTop = scrollTop === 0;
+      const isAtBottom = scrollTop + clientHeight >= scrollHeight - 1;
+
+      // Prevent page scroll when at boundaries and still locked
+      if ((isAtTop && e.deltaY < 0) || (isAtBottom && e.deltaY > 0)) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    };
+
+    chatWindow.addEventListener("wheel", handleWheel, { passive: false });
+    return () => chatWindow.removeEventListener("wheel", handleWheel);
+  }, [scrollLocked]);
 
   function simulateAlert(ctx: SimContext) {
     setBusy(true);
@@ -129,6 +184,10 @@ export default function CopilotGeoRAG() {
   function handleSimulate() {
     const ctx = presets[presetIdx];
     simulateAlert(ctx);
+    
+    // Activate scroll lock when button is clicked
+    setScrollLocked(true);
+    setScrollCount(0); // Reset scroll count for new interaction
   }
 
   function shufflePreset(dir: 1 | -1) {
@@ -186,8 +245,32 @@ export default function CopilotGeoRAG() {
         </div>
       </div>
 
+      {/* Scroll Progress Indicator */}
+      {scrollLocked && (
+        <div className={`${CARD} flex items-center justify-between`}>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-white/60">
+              Scroll to explore ({scrollCount}/{MAX_SCROLLS})
+            </span>
+            <div className="flex gap-1">
+              {Array.from({ length: MAX_SCROLLS }).map((_, i) => (
+                <div
+                  key={i}
+                  className={`h-1.5 w-8 rounded-full transition-colors ${
+                    i < scrollCount ? "bg-emerald-400" : "bg-white/20"
+                  }`}
+                />
+              ))}
+            </div>
+          </div>
+          <span className="text-xs text-emerald-400">
+            {scrollCount >= MAX_SCROLLS ? "✓ Unlocked!" : "Keep scrolling to unlock"}
+          </span>
+        </div>
+      )}
+
       {/* Chat Window */}
-      <div className={`${CARD} max-h-[420px] overflow-y-auto`}>
+      <div ref={chatWindowRef} className={`${CARD} max-h-[420px] overflow-y-auto relative`}>
         <ul className="space-y-3">
           <AnimatePresence initial={false}>
             {msgs.map((m) => (

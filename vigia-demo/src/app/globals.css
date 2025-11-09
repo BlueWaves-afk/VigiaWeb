@@ -86,4 +86,21 @@ body{ background:var(--surface); color:var(--ink); }
   backdrop-filter: blur(8px);
   box-shadow: 0 8px 30px rgba(0,0,0,.25);
 }
+/* Hide scrollbars but keep scroll functionality */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 @keyframes shimmer { 100% { transform: translateX(100%); } }
+
+/* Uniform CTA sizing helper: keep styles, unify size */
+.cta-uniform {
+  /* consistent height and horizontal rhythm without changing colors/hover */
+  height: 44px; /* ~11 Tailwind units */
+  padding-left: 16px; /* px-4 */
+  padding-right: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px; /* match existing icon gap */
+  line-height: 1; /* avoid vertical jitter */
+  font-size: 0.95rem; /* keep close to existing */
+}

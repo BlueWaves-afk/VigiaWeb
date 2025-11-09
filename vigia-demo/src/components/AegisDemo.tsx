@@ -1,846 +1,598 @@
 "use client";
 
-import React, { useCallback, useEffect, useRef, useState } from "react";
-// ultra-light ONNX runtime (WebGPU if available, fallback to WASM)
+import React, { useEffect, useRef, useState, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import * as ort from "onnxruntime-web";
 
-// Reduce ONNX Runtime logging noise (warnings → dev console only on demand)
-if (typeof window !== "undefined") {
-  ort.env.logSeverityLevel = 3; // 0=verbose … 3=error, 4=fatal
-  ort.env.logVerbosityLevel = 0;
-}
-
-/**
- * VIGIA Aegis (Privacy) Demo — UltraFace ONNX, on-device blur
- * - Plays a looping dashcam clip.
- * - Runs UltraFace (version-RFB-320-int8) in the browser to detect faces.
- * - Draws boxes for faces (from the model) + scripted plates/hazards.
- * - Togglable privacy blur obscures faces & plates via CSS.
- *
- * Put models here: /public/models/UltrafaceRFB320Int8.onnx
- * Video here:      /public/demo/face_blur.mp4  (or change VIDEO_SRC)
- */
-
-type BoxType = "face" | "license_plate" | "pothole" | "debris";
-type RGBHex = `#${string}`;
-
-type Track = {
-  id: string;
-  type: BoxType;
-  color: RGBHex;
-  start: number;
-  end: number;
-  p0: { x: number; y: number; w: number; h: number }; // normalized [0..1]
-  p1: { x: number; y: number; w: number; h: number }; // normalized [0..1]
-  label?: string;
+type Detection = {
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+  score: number;
 };
 
-const VIDEO_SRC = "/demo/face_blur.mp4";
-const ULTRAFACE_ONNX = "/models/UltrafaceRFB320Int8.onnx";
-
-// ───────────────────────────────────────────────────────────────────────────────
-// Scripted license plate + hazards (kept for demo continuity)
-// ───────────────────────────────────────────────────────────────────────────────
-const SCRIPTED: Track[] = [
-  {
-    id: "lp-1",
-    type: "license_plate",
-    color: "#60a5fa",
-    start: 2.2,
-    end: 5.6,
-    p0: { x: 0.47, y: 0.60, w: 0.12, h: 0.08 },
-    p1: { x: 0.49, y: 0.57, w: 0.11, h: 0.075 },
-    label: "PLATE",
-  },
-  {
-    id: "hz-1",
-    type: "pothole",
-    color: "#ef4444",
-    start: 4.0,
-    end: 6.5,
-    p0: { x: 0.56, y: 0.78, w: 0.10, h: 0.06 },
-    p1: { x: 0.54, y: 0.74, w: 0.12, h: 0.07 },
-    label: "POTHOLE",
-  },
-  {
-    id: "hz-2",
-    type: "debris",
-    color: "#f59e0b",
-    start: 8.0,
-    end: 11.3,
-    p0: { x: 0.32, y: 0.80, w: 0.09, h: 0.06 },
-    p1: { x: 0.30, y: 0.76, w: 0.11, h: 0.065 },
-    label: "DEBRIS",
-  },
-];
-
-// ───────────────────────────────────────────────────────────────────────────────
-// UltraFace constants (RFB-320) — priors/nms/decoding for 320x240 input
-// Based on the common UltraFace config.
-// ───────────────────────────────────────────────────────────────────────────────
-const UF_IN_W = 320;
-const UF_IN_H = 240;
-const UF_STEPS = [8, 16, 32, 64];
-const UF_MIN_SIZES = [
-  [10, 16, 24],
-  [32, 48],
-  [64, 96],
-  [128, 192, 256],
-];
-const UF_VARIANCE: [number, number] = [0.1, 0.2];
-const SCORE_THRESH = 0.6;
-const NMS_THRESH = 0.3;
-const MAX_DETS = 200;
-
-// utilities
-const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
-const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
-
-// generate prior boxes for 320x240
-function generatePriors() {
-  const featureMaps: [number, number][] = UF_STEPS.map((s) => [
-    Math.ceil(UF_IN_W / s),
-    Math.ceil(UF_IN_H / s),
-  ]);
-
-  const priors: number[] = []; // flat [cx, cy, w, h] in 0..1
-  for (let k = 0; k < featureMaps.length; k++) {
-    const [fmW, fmH] = featureMaps[k];
-    const minSizes = UF_MIN_SIZES[k];
-    for (let i = 0; i < fmH; i++) {
-      for (let j = 0; j < fmW; j++) {
-        for (const ms of minSizes) {
-          const s_kx = ms / UF_IN_W;
-          const s_ky = ms / UF_IN_H;
-          const cx = (j + 0.5) * UF_STEPS[k] / UF_IN_W;
-          const cy = (i + 0.5) * UF_STEPS[k] / UF_IN_H;
-          priors.push(cx, cy, s_kx, s_ky);
-        }
-      }
-    }
-  }
-  return new Float32Array(priors);
-}
-
-// decode boxes (loc) given priors and variance → corner boxes [x1,y1,x2,y2] in 0..1
-function decodeBoxes(loc: Float32Array, priors: Float32Array) {
-  const decoded = new Float32Array((loc.length / 4) * 4);
-  for (let i = 0; i < priors.length / 4; i++) {
-    const px = priors[i * 4 + 0];
-    const py = priors[i * 4 + 1];
-    const pw = priors[i * 4 + 2];
-    const ph = priors[i * 4 + 3];
-
-    const dx = loc[i * 4 + 0];
-    const dy = loc[i * 4 + 1];
-    const dw = loc[i * 4 + 2];
-    const dh = loc[i * 4 + 3];
-
-    // center decode
-    const cx = px + dx * UF_VARIANCE[0] * pw;
-    const cy = py + dy * UF_VARIANCE[0] * ph;
-    const w = pw * Math.exp(dw * UF_VARIANCE[1]);
-    const h = ph * Math.exp(dh * UF_VARIANCE[1]);
-    const x1 = cx - w / 2;
-    const y1 = cy - h / 2;
-    const x2 = cx + w / 2;
-    const y2 = cy + h / 2;
-
-    decoded[i * 4 + 0] = x1;
-    decoded[i * 4 + 1] = y1;
-    decoded[i * 4 + 2] = x2;
-    decoded[i * 4 + 3] = y2;
-  }
-  return decoded;
-}
-
-// simple NMS (IoU)
-function nms(boxes: Float32Array, scores: Float32Array, iouThresh: number, topk = MAX_DETS) {
-  const idxs = Array.from(scores.keys()).sort((a, b) => scores[b] - scores[a]);
-  const selected: number[] = [];
-  const suppressed = new Uint8Array(scores.length);
-
-  function iou(i: number, j: number) {
-    const x1 = Math.max(boxes[i * 4 + 0], boxes[j * 4 + 0]);
-    const y1 = Math.max(boxes[i * 4 + 1], boxes[j * 4 + 1]);
-    const x2 = Math.min(boxes[i * 4 + 2], boxes[j * 4 + 2]);
-    const y2 = Math.min(boxes[i * 4 + 3], boxes[j * 4 + 3]);
-    const w = Math.max(0, x2 - x1);
-    const h = Math.max(0, y2 - y1);
-    const inter = w * h;
-    const a =
-      (boxes[i * 4 + 2] - boxes[i * 4 + 0]) *
-      (boxes[i * 4 + 3] - boxes[i * 4 + 1]);
-    const b =
-      (boxes[j * 4 + 2] - boxes[j * 4 + 0]) *
-      (boxes[j * 4 + 3] - boxes[j * 4 + 1]);
-    return inter / (a + b - inter + 1e-6);
-  }
-
-  for (const i of idxs) {
-    if (scores[i] < SCORE_THRESH) continue;
-    if (suppressed[i]) continue;
-    selected.push(i);
-    if (selected.length >= topk) break;
-    for (let k = 0; k < idxs.length; k++) {
-      const j = idxs[k];
-      if (suppressed[j]) continue;
-      if (j === i) continue;
-      if (iou(i, j) > iouThresh) suppressed[j] = 1;
-    }
-  }
-  return selected;
-}
-
-// ───────────────────────────────────────────────────────────────────────────────
-// Component
-// ───────────────────────────────────────────────────────────────────────────────
 export default function AegisDemo() {
-  const wrapRef = useRef<HTMLDivElement | null>(null);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const rafRef = useRef<number | null>(null);
-
-  const [aegisOn, setAegisOn] = useState(true);
-  const [playing, setPlaying] = useState(false);
-  const [visibleCounts, setVisibleCounts] = useState({ faces: 0, plates: 0 });
-  const [logLines, setLogLines] = useState<string[]>([]);
-
-  // UltraFace session + buffers
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const sessionRef = useRef<ort.InferenceSession | null>(null);
-  const priorsRef = useRef<Float32Array | null>(null);
-  const offscreenRef = useRef<HTMLCanvasElement | null>(null);
-  const lastFacesLoggedRef = useRef<number | null>(null);
-  const sessionLogRef = useRef({ waitingNotified: false });
-  const pushLogRef = useRef<(msg: string) => void>(() => {});
-  const inferCountRef = useRef(0);
-  const tensorShapeRef = useRef<string | null>(null);
-  const inferPendingRef = useRef(false);
-  // store crop transform applied when resizing video → model input so we can map boxes back
-  const cropRef = useRef<{ sx: number; sy: number; sw: number; sh: number } | null>(null);
-  const blurSupportedRef = useRef<boolean>(true);
+  const animationFrameRef = useRef<number | null>(null);
 
-  const pushLog = useCallback((msg: string) => {
-    const stamp = new Date().toLocaleTimeString();
-    setLogLines((prev) => {
-      const next = [...prev, `[${stamp}] ${msg}`];
-      if (next.length > 60) next.shift();
-      return next;
-    });
-  }, []);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [fps, setFps] = useState(0);
+  const [detectionCount, setDetectionCount] = useState(0);
+  const [blurIntensity, setBlurIntensity] = useState(15);
 
-  const clearLog = useCallback(() => setLogLines([]), []);
+  // FPS calculation
+  const fpsRef = useRef({ frames: 0, lastTime: performance.now() });
 
+  // Load ONNX model
   useEffect(() => {
-    pushLogRef.current = pushLog;
-  }, [pushLog]);
+    let mounted = true;
 
-  const togglePlayback = () => {
-    const v = videoRef.current;
-    if (!v) return;
-    if (v.paused) {
-      void v.play().catch(() => {});
-    } else {
-      v.pause();
-    }
-  };
-
-  const restartPlayback = () => {
-    const v = videoRef.current;
-    if (!v) return;
-    v.currentTime = 0;
-    void v.play().catch(() => {});
-  };
-
-  // init ORT + session
-  useEffect(() => {
-    (async () => {
+    const loadModel = async () => {
       try {
-        // Try WebGPU first; fallback to WASM
-        const opts: ort.InferenceSession.SessionOptions = {};
-        if (typeof navigator !== "undefined" && "gpu" in navigator) {
-          opts.executionProviders = ["webgpu"];
-        } else {
-          opts.executionProviders = ["wasm"];
+        setIsLoading(true);
+        setError(null);
+
+        // Configure ONNX Runtime
+        ort.env.wasm.wasmPaths = "/ort/";
+        ort.env.wasm.numThreads = 4;
+
+        // Load the UltraFace model
+        const session = await ort.InferenceSession.create("/models/UltrafaceRFB320Int8.onnx", {
+          executionProviders: ["wasm"],
+          graphOptimizationLevel: "all",
+        });
+
+        if (mounted) {
+          sessionRef.current = session;
+          console.log("✅ UltraFace model loaded successfully");
+          console.log("Input names:", session.inputNames);
+          console.log("Output names:", session.outputNames);
         }
-        sessionRef.current = await ort.InferenceSession.create(ULTRAFACE_ONNX, opts);
-        priorsRef.current = generatePriors();
-        const provider =
-          (sessionRef.current as unknown as { executionProviders?: string[] })
-            ?.executionProviders?.[0] ?? opts.executionProviders?.[0] ?? "unknown";
-        
-        // Log model input/output metadata for debugging
-        const inputMetadata = sessionRef.current.inputNames.map(name => {
-          // Try to get input metadata if available
-          return { name };
-        });
-        
-        console.info("[AegisDemo] UltraFace session ready", { 
-          provider,
-          inputNames: sessionRef.current.inputNames,
-          outputNames: sessionRef.current.outputNames,
-          inputMetadata,
-        });
-        console.warn("[AegisDemo] ⚠️  CRITICAL: Verify model expects [1, 3, 240, 320] shape (batch, channels, height, width)");
-        
-        pushLogRef.current(`UltraFace session ready (provider: ${provider})`);
-        sessionLogRef.current.waitingNotified = false;
-      } catch (e) {
-        console.error("UltraFace init failed:", e);
-        pushLogRef.current("UltraFace init failed; see console for details");
+      } catch (err) {
+        console.error("Failed to load model:", err);
+        if (mounted) {
+          setError("Failed to load face detection model");
+        }
+      } finally {
+        if (mounted) {
+          setIsLoading(false);
+        }
       }
-    })();
-  }, []);
-
-  // keep React state in sync with the underlying <video> element and auto-start playback
-  useEffect(() => {
-    const v = videoRef.current;
-    if (!v) return;
-
-    const handlePlay = () => setPlaying(true);
-    const handlePause = () => setPlaying(false);
-    const handleEnded = () => setPlaying(false);
-
-    v.addEventListener("play", handlePlay);
-    v.addEventListener("pause", handlePause);
-    v.addEventListener("ended", handleEnded);
-
-    const ensureStart = () => {
-      if (!v) return;
-      void v.play().catch(() => {
-        // autoplay might fail until user interacts; leave state as-is
-      });
     };
 
-    if (v.readyState >= 2) ensureStart();
-    else v.addEventListener("canplay", ensureStart, { once: true });
+    loadModel();
 
     return () => {
-      v.removeEventListener("play", handlePlay);
-      v.removeEventListener("pause", handlePause);
-      v.removeEventListener("ended", handleEnded);
-      v.removeEventListener("canplay", ensureStart);
+      mounted = false;
+      if (sessionRef.current) {
+        sessionRef.current = null;
+      }
     };
   }, []);
 
-  // main loop: 1) run UltraFace ~8 FPS  2) place scripted boxes by time
-  useEffect(() => {
-    const v = videoRef.current;
-    const wrap = wrapRef.current;
-    if (!v || !wrap) return;
+  // Preprocess frame for UltraFace (expects 320x240 RGB)
+  const preprocessFrame = useCallback((
+    ctx: CanvasRenderingContext2D,
+    width: number,
+    height: number
+  ): ort.Tensor => {
+    // UltraFace RFB-320 expects 320x240 input
+    const modelWidth = 320;
+    const modelHeight = 240;
 
-    const boxes = new Map<string, HTMLDivElement>();
-    const faceIdsLive = new Set<string>(); // to recycle DOM nodes
+    // Create temporary canvas for resizing
+    const tempCanvas = document.createElement("canvas");
+    tempCanvas.width = modelWidth;
+    tempCanvas.height = modelHeight;
+    const tempCtx = tempCanvas.getContext("2d");
 
-    function upsertBox(id: string, type: BoxType, color: string, label?: string) {
-      let el = boxes.get(id);
-      if (!el) {
-        el = document.createElement("div");
-        el.className = "bbox pointer-events-none";
-        el.dataset.type = type;
-        el.style.position = "absolute";
-        el.style.boxShadow = `0 0 0 2px ${color} inset, 0 0 24px ${color}40`;
-        el.style.borderRadius = "8px";
-        el.style.transition = "opacity 120ms linear";
-        // DO NOT set backdropFilter or filter inline - let CSS handle blur
-
-        const tag = document.createElement("div");
-        tag.className = "bbox-tag";
-        tag.textContent = label || type.toUpperCase();
-        tag.style.position = "absolute";
-        tag.style.bottom = "100%";
-        tag.style.left = "0";
-        tag.style.transform = "translateY(-6px)";
-        tag.style.fontSize = "11px";
-        tag.style.padding = "2px 6px";
-        tag.style.borderRadius = "999px";
-        tag.style.background = "rgba(0,0,0,.6)";
-        tag.style.color = "#fff";
-        tag.style.backdropFilter = "blur(4px)";
-        tag.style.whiteSpace = "nowrap";
-        el.appendChild(tag);
-
-        // Fallback canvas for pixelation when backdrop-filter unsupported
-        if (!blurSupportedRef.current) {
-          const pix = document.createElement("canvas");
-          pix.width = 16; // will be resized each frame
-          pix.height = 16;
-          pix.style.position = "absolute";
-          pix.style.inset = "0";
-          pix.style.width = "100%";
-          pix.style.height = "100%";
-          // ensure pixelation
-          pix.style.imageRendering = "pixelated";
-          el.appendChild(pix);
-        }
-
-        if (wrap) wrap.appendChild(el);
-        boxes.set(id, el);
-      }
-      return el;
+    if (!tempCtx) {
+      throw new Error("Failed to get temp canvas context");
     }
 
-    // draw scripted (plates/hazards) by time
-    function drawScripted(t: number, W: number, H: number) {
-      let plates = 0;
-      const seen = new Set<string>();
-      for (const tr of SCRIPTED) {
-        if (t < tr.start || t > tr.end) continue;
-        const u = clamp01((t - tr.start) / (tr.end - tr.start));
-        const x = lerp(tr.p0.x, tr.p1.x, u) * W;
-        const y = lerp(tr.p0.y, tr.p1.y, u) * H;
-        const w = lerp(tr.p0.w, tr.p1.w, u) * W;
-        const h = lerp(tr.p0.h, tr.p1.h, u) * H;
-        const el = upsertBox(tr.id, tr.type, tr.color, tr.label);
-        el.style.opacity = "1";
-        el.style.transform = `translate(${x - w / 2}px, ${y - h / 2}px)`;
-        el.style.width = `${w}px`;
-        el.style.height = `${h}px`;
-        seen.add(tr.id);
-        if (tr.type === "license_plate") plates += 1;
-      }
-      // hide scripted that are off now
-      for (const [id, el] of boxes) {
-        if (id.startsWith("lp-") || id.startsWith("hz-")) {
-          if (!seen.has(id)) el.style.opacity = "0";
-        }
-      }
-      return plates;
+    // Draw resized image
+    tempCtx.drawImage(ctx.canvas, 0, 0, width, height, 0, 0, modelWidth, modelHeight);
+
+    // Get image data
+    const imageData = tempCtx.getImageData(0, 0, modelWidth, modelHeight);
+    const { data } = imageData;
+
+    // Convert to float32 and normalize to [0, 1], then scale to [-1, 1]
+    // UltraFace preprocessing: (pixel / 255.0 - 0.5) / 0.5 = (pixel - 127.5) / 127.5
+    const float32Data = new Float32Array(3 * modelWidth * modelHeight);
+
+    for (let i = 0; i < modelWidth * modelHeight; i++) {
+      const r = data[i * 4];
+      const g = data[i * 4 + 1];
+      const b = data[i * 4 + 2];
+
+      // CHW format (Channel, Height, Width)
+      float32Data[i] = (r - 127.5) / 127.5; // R channel
+      float32Data[modelWidth * modelHeight + i] = (g - 127.5) / 127.5; // G channel
+      float32Data[2 * modelWidth * modelHeight + i] = (b - 127.5) / 127.5; // B channel
     }
 
-    // prepare tensor from video frame (Uint8, CHW format: [batch, channels, height, width])
-    function toTensorU8_CHW(
-      video: HTMLVideoElement,
-      canvas: HTMLCanvasElement
-    ): ort.Tensor {
-      const ctx = canvas.getContext("2d", { willReadFrequently: true })!;
-      canvas.width = UF_IN_W; // 320
-      canvas.height = UF_IN_H; // 240
+    return new ort.Tensor("float32", float32Data, [1, 3, modelHeight, modelWidth]);
+  }, []);
 
-      // Maintain aspect using center crop (cover) to avoid vertical distortion that misaligns boxes.
-      const vw = video.videoWidth || 1;
-      const vh = video.videoHeight || 1;
-      // scale needed so that both dimensions of target are covered by source after scaling.
-      const scale = Math.max(UF_IN_W / vw, UF_IN_H / vh);
-      const sw = Math.round(UF_IN_W / scale);
-      const sh = Math.round(UF_IN_H / scale);
-      const sx = Math.floor((vw - sw) / 2);
-      const sy = Math.floor((vh - sh) / 2);
+  // Non-Maximum Suppression
+  const nms = useCallback((detections: Detection[], iouThreshold = 0.4): Detection[] => {
+    if (detections.length === 0) return [];
 
-      // draw cropped region scaled to model input size
-      ctx.drawImage(video, sx, sy, sw, sh, 0, 0, UF_IN_W, UF_IN_H);
-      cropRef.current = { sx, sy, sw, sh };
+    // Sort by score descending
+    const sorted = [...detections].sort((a, b) => b.score - a.score);
+    const keep: Detection[] = [];
 
-      const imageData = ctx.getImageData(0, 0, UF_IN_W, UF_IN_H);
-      const data = imageData.data;
-      const totalPixels = UF_IN_W * UF_IN_H;
-      const chw = new Float32Array(3 * totalPixels);
-      for (let i = 0; i < totalPixels; i++) {
-        const rgbaIndex = i * 4;
-        chw[i] = data[rgbaIndex] / 255.0;
-        chw[i + totalPixels] = data[rgbaIndex + 1] / 255.0;
-        chw[i + 2 * totalPixels] = data[rgbaIndex + 2] / 255.0;
-      }
-      return new ort.Tensor("float32", chw, [1, 3, UF_IN_H, UF_IN_W]);
+    while (sorted.length > 0) {
+      const current = sorted.shift()!;
+      keep.push(current);
+
+      sorted.splice(
+        0,
+        sorted.length,
+        ...sorted.filter((det) => {
+          const intersectX1 = Math.max(current.x1, det.x1);
+          const intersectY1 = Math.max(current.y1, det.y1);
+          const intersectX2 = Math.min(current.x2, det.x2);
+          const intersectY2 = Math.min(current.y2, det.y2);
+
+          const intersectArea = Math.max(0, intersectX2 - intersectX1) * Math.max(0, intersectY2 - intersectY1);
+          const area1 = (current.x2 - current.x1) * (current.y2 - current.y1);
+          const area2 = (det.x2 - det.x1) * (det.y2 - det.y1);
+          const unionArea = area1 + area2 - intersectArea;
+
+          const iou = intersectArea / unionArea;
+          return iou <= iouThreshold;
+        })
+      );
     }
 
-    // run UltraFace and draw face boxes (model → priors → decode → NMS)
-    let lastInfer = 0;
-    if (!offscreenRef.current) offscreenRef.current = document.createElement("canvas");
+    return keep;
+  }, []);
 
-    const loop = () => {
-      const now = performance.now();
-      const t = videoRef.current?.currentTime || 0;
-      const W = wrap.clientWidth;
-      const H = wrap.clientHeight;
+  // Post-process UltraFace output
+  const postprocessOutput = useCallback(
+    (scores: Float32Array, boxes: Float32Array, width: number, height: number): Detection[] => {
+      const detections: Detection[] = [];
+      const scoreThreshold = 0.7;
 
-      // draw scripted overlays
-      const platesNow = drawScripted(t, W, H);
+      // UltraFace outputs:
+      // scores: [1, num_anchors, 2] - background and face scores
+      // boxes: [1, num_anchors, 4] - bbox coordinates
 
-      // throttle UltraFace to ~8 FPS
-      const shouldInfer = now - lastInfer > 120;
+      const numAnchors = scores.length / 2;
 
-      const priors = priorsRef.current;
-      const session = sessionRef.current;
+      for (let i = 0; i < numAnchors; i++) {
+        const faceScore = scores[i * 2 + 1]; // Index 1 is face score
 
-      if (shouldInfer && session && priors && !inferPendingRef.current) {
-        const videoEl = v;
-        if (!videoEl || videoEl.readyState < 2 || videoEl.videoWidth === 0 || videoEl.videoHeight === 0) {
-          // wait for decoded frame before attempting inference
-          setVisibleCounts((prev) => ({ faces: prev.faces, plates: platesNow }));
-        } else {
-          const run = async () => {
-            inferPendingRef.current = true;
-            let inputTensor: ort.Tensor | null = null;
-            try {
-              lastInfer = now;
-              inputTensor = toTensorU8_CHW(videoEl, offscreenRef.current!);
-              inferCountRef.current += 1;
-              if (inferCountRef.current <= 3 || inferCountRef.current % 20 === 0) {
-                const stamp = `[AegisDemo] Inference #${inferCountRef.current} @ ${Number(t.toFixed(2))}s`;
-                console.info(stamp, {
-                  videoReadyState: videoEl.readyState,
-                  width: videoEl.videoWidth,
-                  height: videoEl.videoHeight,
-                  tensorShape: inputTensor.dims,
-                });
-                pushLogRef.current(`Running UltraFace (#${inferCountRef.current}) at t=${Number(t.toFixed(2))}s`);
-              }
+        if (faceScore > scoreThreshold) {
+          // Get box coordinates (normalized 0-1)
+          const x1 = boxes[i * 4] * width;
+          const y1 = boxes[i * 4 + 1] * height;
+          const x2 = boxes[i * 4 + 2] * width;
+          const y2 = boxes[i * 4 + 3] * height;
 
-              const feeds: Record<string, ort.Tensor> = {};
-              const inputName = session.inputNames[0];
-              feeds[inputName] = inputTensor;
-
-              const out = await session.run(feeds);
-              const outNames = session.outputNames;
-              let t0 = out[outNames[0]] as ort.Tensor;
-              let t1 = out[outNames[1]] as ort.Tensor;
-              // Determine which is boxes vs scores by dims (boxes last-dim=4)
-              const isBoxes0 = (t0.dims?.[t0.dims.length - 1] ?? 0) === 4;
-              const boxesRaw = isBoxes0 ? t0 : t1;
-              const scoresRaw = isBoxes0 ? t1 : t0;
-
-              if (!tensorShapeRef.current) {
-                tensorShapeRef.current = `boxes=${boxesRaw.dims?.join("x") ?? "?"}, scores=${scoresRaw.dims?.join("x") ?? "?"}`;
-                console.info("[AegisDemo] UltraFace output dims", {
-                  boxes: boxesRaw.dims,
-                  scores: scoresRaw.dims,
-                  names: outNames,
-                });
-                pushLogRef.current(`UltraFace output dims → ${tensorShapeRef.current}`);
-              }
-
-              // Flatten to arrays
-              const loc = new Float32Array((boxesRaw.data as Float32Array).buffer.slice(
-                (boxesRaw.data as Float32Array).byteOffset,
-                (boxesRaw.data as Float32Array).byteOffset + (boxesRaw.data as Float32Array).byteLength
-              ));
-              const scrAll = new Float32Array((scoresRaw.data as Float32Array).buffer.slice(
-                (scoresRaw.data as Float32Array).byteOffset,
-                (scoresRaw.data as Float32Array).byteOffset + (scoresRaw.data as Float32Array).byteLength
-              ));
-
-              // Build probability vector robustly across shapes: [N,2] take class1; [N,1] take value; if range not [0,1], apply sigmoid.
-              let N: number;
-              let probs: Float32Array;
-              const lastDimScores = scoresRaw.dims?.[scoresRaw.dims.length - 1] ?? 2;
-              if (lastDimScores === 2) {
-                N = scrAll.length / 2;
-                probs = new Float32Array(N);
-                for (let i = 0; i < N; i++) {
-                  let p = scrAll[i * 2 + 1];
-                  if (p < 0 || p > 1) p = 1 / (1 + Math.exp(-p)); // sigmoid
-                  probs[i] = p;
-                }
-              } else {
-                // assume single-prob per anchor
-                N = scrAll.length;
-                probs = new Float32Array(N);
-                for (let i = 0; i < N; i++) {
-                  let p = scrAll[i];
-                  if (p < 0 || p > 1) p = 1 / (1 + Math.exp(-p));
-                  probs[i] = p;
-                }
-              }
-
-              const decoded = decodeBoxes(loc, priors);
-              for (let i = 0; i < decoded.length; i += 4) {
-                decoded[i + 0] = clamp01(decoded[i + 0]);
-                decoded[i + 1] = clamp01(decoded[i + 1]);
-                decoded[i + 2] = clamp01(decoded[i + 2]);
-                decoded[i + 3] = clamp01(decoded[i + 3]);
-              }
-
-              const keep = nms(decoded, probs, NMS_THRESH, MAX_DETS);
-
-              faceIdsLive.forEach((id) => {
-                const el = boxes.get(id);
-                if (el) el.style.opacity = "0";
-              });
-              faceIdsLive.clear();
-
-              let facesFound = 0;
-              // Precompute video→display mapping for this frame
-              const vw = v.videoWidth || 1;
-              const vh = v.videoHeight || 1;
-              const sDisp = Math.max(W / vw, H / vh);
-              const dw = vw * sDisp;
-              const dh = vh * sDisp;
-              const dx = (W - dw) / 2;
-              const dy = (H - dh) / 2;
-
-              keep.forEach((k) => {
-                if (probs[k] < SCORE_THRESH) return;
-                // decoded coords are normalized relative to the model input (cropped)
-                const crop = cropRef.current ?? { sx: 0, sy: 0, sw: vw, sh: vh };
-                const x1n = decoded[k * 4 + 0];
-                const y1n = decoded[k * 4 + 1];
-                const x2n = decoded[k * 4 + 2];
-                const y2n = decoded[k * 4 + 3];
-
-                // Map model-normalized → video pixels
-                const vx1 = crop.sx + x1n * crop.sw;
-                const vy1 = crop.sy + y1n * crop.sh;
-                const vx2 = crop.sx + x2n * crop.sw;
-                const vy2 = crop.sy + y2n * crop.sh;
-
-                // Map video pixels → display pixels (object-fit: cover)
-                const x1 = dx + (vx1 / vw) * dw;
-                const y1 = dy + (vy1 / vh) * dh;
-                const x2 = dx + (vx2 / vw) * dw;
-                const y2 = dy + (vy2 / vh) * dh;
-                const w = x2 - x1;
-                const h = y2 - y1;
-
-                // Discard absurd boxes
-                if (w <= 4 || h <= 4) return;
-
-                const id = `face-live-${k}`;
-                const el = upsertBox(id, "face", "#22c55e", "FACE");
-                el.style.opacity = "1";
-                el.style.transform = `translate(${x1}px, ${y1}px)`;
-                el.style.width = `${w}px`;
-                el.style.height = `${h}px`;
-
-                // Fallback: draw pixelation on canvas when blur unsupported
-                if (!blurSupportedRef.current) {
-                  const pix = el.querySelector("canvas");
-                  if (pix) {
-                    const ctx = (pix as HTMLCanvasElement).getContext("2d");
-                    if (ctx) {
-                      const downscale = 0.1; // 10% resolution for pixelation
-                      const smallW = Math.max(4, Math.floor(w * downscale));
-                      const smallH = Math.max(4, Math.floor(h * downscale));
-                      (pix as HTMLCanvasElement).width = smallW;
-                      (pix as HTMLCanvasElement).height = smallH;
-                      // Draw from video source rect in video space corresponding to this box
-                      ctx.imageSmoothingEnabled = false;
-                      // Source rect in video pixels
-                      const srcX = vx1;
-                      const srcY = vy1;
-                      const srcW = Math.max(1, vx2 - vx1);
-                      const srcH = Math.max(1, vy2 - vy1);
-                      ctx.clearRect(0, 0, smallW, smallH);
-                      ctx.drawImage(v, srcX, srcY, srcW, srcH, 0, 0, smallW, smallH);
-                      // Upscale via CSS (imageRendering: pixelated)
-                      // The canvas element is 100% sized through CSS above.
-                    }
-                  }
-                }
-                faceIdsLive.add(id);
-                facesFound++;
-              });
-
-              if (
-                lastFacesLoggedRef.current === null ||
-                lastFacesLoggedRef.current !== facesFound
-              ) {
-                lastFacesLoggedRef.current = facesFound;
-                console.info("[AegisDemo] UltraFace detections", {
-                  faces: facesFound,
-                  plates: platesNow,
-                  timestampSeconds: Number(t.toFixed(2)),
-                });
-                pushLogRef.current(
-                  `Detections – faces: ${facesFound}, plates: ${platesNow}, t=${Number(t.toFixed(2))}s`
-                );
-              }
-
-              if (facesFound === 0 && inferCountRef.current % 25 === 0) {
-                console.info("[AegisDemo] UltraFace produced 0 faces this cycle", {
-                  inference: inferCountRef.current,
-                  timestampSeconds: Number(t.toFixed(2)),
-                });
-                pushLogRef.current("UltraFace returned 0 faces – ensure subject is visible or check lighting");
-              }
-
-              setVisibleCounts({ faces: facesFound, plates: platesNow });
-            } catch (err) {
-              console.error("[AegisDemo] UltraFace inference failed", err);
-              pushLogRef.current("UltraFace inference failed; see console for details");
-            } finally {
-              // Always dispose input tensor to prevent memory leaks
-              if (inputTensor) {
-                try {
-                  inputTensor.dispose();
-                } catch {
-                  // ignore disposal errors
-                }
-              }
-              inferPendingRef.current = false;
-            }
-          };
-          run().catch((err) => {
-            console.error("[AegisDemo] UltraFace async run error", err);
-            inferPendingRef.current = false;
+          detections.push({
+            x1: Math.max(0, x1),
+            y1: Math.max(0, y1),
+            x2: Math.min(width, x2),
+            y2: Math.min(height, y2),
+            score: faceScore,
           });
         }
-      } else if (!sessionRef.current && shouldInfer && !sessionLogRef.current.waitingNotified) {
-        console.info("[AegisDemo] Waiting for UltraFace session to load...");
-        sessionLogRef.current.waitingNotified = true;
-        pushLogRef.current("Waiting for UltraFace session to load...");
-      } else {
-        // no inference this frame; still update counts for scripted
-        setVisibleCounts((prev) => ({ faces: prev.faces, plates: platesNow }));
       }
 
-      rafRef.current = requestAnimationFrame(loop);
-    };
+      return nms(detections);
+    },
+    [nms]
+  );
 
-    rafRef.current = requestAnimationFrame(loop);
+  // Apply blur to detected faces
+  const blurFaces = useCallback(
+    (ctx: CanvasRenderingContext2D, detections: Detection[]) => {
+      detections.forEach((det) => {
+        const boxWidth = det.x2 - det.x1;
+        const boxHeight = det.y2 - det.y1;
+
+        // Expand box slightly for better coverage
+        const padding = 5;
+        const x = Math.max(0, Math.floor(det.x1 - padding));
+        const y = Math.max(0, Math.floor(det.y1 - padding));
+        const w = Math.min(ctx.canvas.width - x, Math.ceil(boxWidth + padding * 2));
+        const h = Math.min(ctx.canvas.height - y, Math.ceil(boxHeight + padding * 2));
+
+        // Skip if dimensions are invalid
+        if (w <= 0 || h <= 0) return;
+
+        // Get the face region
+        const imageData = ctx.getImageData(x, y, w, h);
+        const data = imageData.data;
+
+        // Apply pixelation blur effect
+        const pixelSize = Math.max(1, blurIntensity);
+        
+        for (let py = 0; py < h; py += pixelSize) {
+          for (let px = 0; px < w; px += pixelSize) {
+            // Calculate the bounds for this pixel block
+            const blockEndX = Math.min(px + pixelSize, w);
+            const blockEndY = Math.min(py + pixelSize, h);
+            
+            // Get average color of pixel block
+            let r = 0, g = 0, b = 0, a = 0, count = 0;
+
+            for (let dy = py; dy < blockEndY; dy++) {
+              for (let dx = px; dx < blockEndX; dx++) {
+                const i = (dy * w + dx) * 4;
+                r += data[i];
+                g += data[i + 1];
+                b += data[i + 2];
+                a += data[i + 3];
+                count++;
+              }
+            }
+
+            if (count > 0) {
+              r = Math.round(r / count);
+              g = Math.round(g / count);
+              b = Math.round(b / count);
+              a = Math.round(a / count);
+
+              // Fill the entire block with the average color
+              for (let dy = py; dy < blockEndY; dy++) {
+                for (let dx = px; dx < blockEndX; dx++) {
+                  const i = (dy * w + dx) * 4;
+                  data[i] = r;
+                  data[i + 1] = g;
+                  data[i + 2] = b;
+                  data[i + 3] = a;
+                }
+              }
+            }
+          }
+        }
+
+        // Put the blurred region back
+        ctx.putImageData(imageData, x, y);
+
+        // Draw bounding box
+        ctx.strokeStyle = "#06b6d4";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(det.x1, det.y1, boxWidth, boxHeight);
+
+        // Draw confidence score
+        ctx.fillStyle = "#06b6d4";
+        ctx.font = "14px monospace";
+        ctx.fillText(
+          `Face ${(det.score * 100).toFixed(0)}%`,
+          det.x1,
+          det.y1 - 8
+        );
+      });
+    },
+    [blurIntensity]
+  );
+
+  // Process video frame
+  const processFrame = useCallback(async () => {
+    if (!videoRef.current || !canvasRef.current || !sessionRef.current) {
+      return;
+    }
+
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+
+    if (!ctx || video.paused || video.ended) {
+      return;
+    }
+
+    try {
+      // Draw current video frame
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      // Preprocess for model
+      const inputTensor = preprocessFrame(ctx, canvas.width, canvas.height);
+
+      // Run inference
+      const feeds: Record<string, ort.Tensor> = {};
+      feeds[sessionRef.current.inputNames[0]] = inputTensor;
+
+      const results = await sessionRef.current.run(feeds);
+
+      // Get outputs (scores and boxes)
+      const scoresOutput = results[sessionRef.current.outputNames[0]];
+      const boxesOutput = results[sessionRef.current.outputNames[1]];
+
+      const scores = scoresOutput.data as Float32Array;
+      const boxes = boxesOutput.data as Float32Array;
+
+      // Post-process to get detections
+      const detections = postprocessOutput(scores, boxes, canvas.width, canvas.height);
+      setDetectionCount(detections.length);
+
+      // Blur detected faces directly on the current frame
+      if (detections.length > 0) {
+        blurFaces(ctx, detections);
+      }
+
+      // Calculate FPS
+      fpsRef.current.frames++;
+      const now = performance.now();
+      if (now - fpsRef.current.lastTime >= 1000) {
+        setFps(fpsRef.current.frames);
+        fpsRef.current.frames = 0;
+        fpsRef.current.lastTime = now;
+      }
+    } catch (err) {
+      console.error("Frame processing error:", err);
+    }
+
+    // Continue processing
+    if (isPlaying) {
+      animationFrameRef.current = requestAnimationFrame(processFrame);
+    }
+  }, [isPlaying, preprocessFrame, postprocessOutput, blurFaces]);
+
+  // Handle play/pause
+  const togglePlayback = useCallback(() => {
+    if (!videoRef.current || !sessionRef.current) return;
+
+    const video = videoRef.current;
+
+    if (isPlaying) {
+      video.pause();
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
+      }
+      setIsPlaying(false);
+    } else {
+      video.play();
+      setIsPlaying(true);
+    }
+  }, [isPlaying]);
+
+  // Start processing when video plays
+  useEffect(() => {
+    if (isPlaying) {
+      animationFrameRef.current = requestAnimationFrame(processFrame);
+    }
+
     return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-      boxes.forEach((el) => el.remove());
-      boxes.clear();
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
     };
-  }, [pushLog]);
+  }, [isPlaying, processFrame]);
+
+  // Initialize video and canvas
+  useEffect(() => {
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+
+    if (video && canvas) {
+      const handleLoadedMetadata = () => {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+      };
+
+      video.addEventListener("loadedmetadata", handleLoadedMetadata);
+
+      return () => {
+        video.removeEventListener("loadedmetadata", handleLoadedMetadata);
+      };
+    }
+  }, []);
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[minmax(720px,1fr)_360px]">
-      {/* LEFT: Video + overlays */}
-      <div className="relative card-glass overflow-hidden">
-        {/* Global styles for blur so dynamically-created elements are affected */}
-        <style jsx global>{`
-          /* Scope under .aegis-wrap to limit global impact */
-          .aegis-wrap.aegis-on .bbox[data-type="face"],
-          .aegis-wrap.aegis-on .bbox[data-type="license_plate"] {
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            /* Fallback softening if backdrop-filter unsupported */
-            filter: blur(2px) saturate(0.9) brightness(0.9);
-            background-color: rgba(50, 50, 50, 0.35);
-          }
-          .aegis-wrap .bbox-tag { pointer-events: none; }
-          .aegis-wrap video { object-fit: cover; }
-        `}</style>
-
-        {/* Controls */}
-        <div className="absolute left-3 right-3 top-3 z-20 flex items-center justify-between gap-2">
-          <div className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white/80">
-            <span className="font-medium text-white">Demo</span>{" "}
-            <span className="text-white/60">Edge face blur (ONNX)</span>
-          </div>
-          <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-2 py-1">
-            <button
-              className="rounded-md bg-white/10 px-3 py-1 text-sm text-white hover:bg-white/20"
-              onClick={togglePlayback}
-            >
-              {playing ? "Pause" : "Play"}
-            </button>
-            <button
-              className="rounded-md bg-white/10 px-3 py-1 text-sm text-white hover:bg-white/20"
-              onClick={restartPlayback}
-              title="Restart clip"
-            >
-              Restart
-            </button>
-            <label className="flex cursor-pointer items-center gap-2 rounded-md bg-white/10 px-3 py-1 text-sm text-white hover:bg-white/20">
-              <input
-                type="checkbox"
-                className="accent-white"
-                checked={aegisOn}
-                onChange={(e) => setAegisOn(e.target.checked)}
-              />
-              Privacy Blur
-            </label>
-          </div>
-        </div>
-
-        {/* Video + overlays */}
-        <div
-          ref={wrapRef}
-          className={`relative aegis-wrap ${aegisOn ? "aegis-on" : ""}`}
-          style={{ aspectRatio: "16/9" }}
-        >
-          <video
-            ref={videoRef}
-            src={VIDEO_SRC}
-            autoPlay
-            muted
-            loop
-            playsInline
-            preload="auto"
-            className="h-full w-full"
-          />
-          <div className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-b from-black/10 via-transparent to-black/30" />
-        </div>
-
-        {/* HUD */}
-        <div className="absolute bottom-3 left-3 right-3 z-10 flex flex-wrap items-center justify-between gap-2">
-          <div className="rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-xs text-white/80 backdrop-blur">
-            <div className="flex items-center gap-3">
-              <span>Faces: <b className="text-white">{visibleCounts.faces}</b></span>
-              <span>Plates: <b className="text-white">{visibleCounts.plates}</b></span>
-              <span>Hazards scripted: <b className="text-white">2</b></span>
-            </div>
-          </div>
-          <div className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-white/70">
-            Privacy {aegisOn ? <b className="text-white">ON</b> : <b className="text-white">OFF</b>} · On-device (UltraFace + CSS blur)
-          </div>
-        </div>
-      </div>
-
-      {/* RIGHT: Explainer + Legend */}
-      <div className="space-y-4">
-        <div className="card-glass p-4">
-          <div className="mb-2 flex items-center justify-between text-sm font-semibold text-white">
-            <span>Live Console</span>
-            <button
-              className="rounded-md bg-white/10 px-2 py-1 text-xs text-white hover:bg-white/20"
-              onClick={clearLog}
-            >
-              Clear
-            </button>
-          </div>
-          <div className="max-h-48 overflow-y-auto rounded border border-white/10 bg-black/40 p-2 text-xs font-mono text-white/80">
-            {logLines.length === 0 ? (
-              <p className="text-white/60">Logs will appear here once the demo starts.</p>
-            ) : (
-              <ul className="space-y-1">
-                {logLines.map((line, idx) => (
-                  <li key={`${line}-${idx}`}>{line}</li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </div>
-
-        <div className="card-glass p-4">
-          <div className="mb-1 text-sm font-semibold text-white">What this proves</div>
-          <ul className="list-disc space-y-2 pl-5 text-sm text-white/85">
-            <li><b>UltraFace (ONNX)</b> runs entirely in-browser (WebGPU/WASM), no server.</li>
-            <li><b>Aegis</b> obscures faces & license plates instantly on-device.</li>
-            <li>Hazards remain visible for utility while PII is protected.</li>
-          </ul>
-        </div>
-
-        <div className="card-glass p-4">
-          <div className="mb-2 text-sm font-semibold text-white">Legend</div>
-          <div className="grid grid-cols-2 gap-2 text-sm text-white/85">
-            <LegendChip color="#22c55e" label="FACE (from UltraFace, blurred)" />
-            <LegendChip color="#60a5fa" label="LICENSE PLATE (scripted, blurred)" />
-            <LegendChip color="#ef4444" label="POTHOLE" />
-            <LegendChip color="#f59e0b" label="DEBRIS" />
-          </div>
-        </div>
-
-        <div className="card-glass p-4">
-          <div className="mb-1 text-sm font-semibold text-white">Where this sits</div>
-          <p className="text-sm text-white/80">
-            In production, Aegis runs before any frame leaves the device. You can later
-            swap the scripted plate track with a YOLOv8-n (plates) ONNX session using
-            the same pattern as UltraFace.
+    <div className="mx-auto max-w-7xl px-4 py-20">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+      >
+        {/* Header */}
+        <div className="mb-8 text-center">
+          <h2 className="mb-3 text-3xl font-semibold text-white sm:text-4xl">
+            Aegis Face Privacy
+          </h2>
+          <p className="mx-auto max-w-2xl text-lg text-slate-300">
+            Real-time face detection and blurring using UltraFace INT8 model.
+            Privacy-first processing directly in your browser.
           </p>
         </div>
-      </div>
-    </div>
-  );
-}
 
-function LegendChip({ color, label }: { color: string; label: string }) {
-  return (
-    <div className="flex items-center gap-2">
-      <span className="inline-block h-3 w-3 rounded" style={{ background: color }} />
-      <span>{label}</span>
+        {/* Main Demo Area */}
+        <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-slate-900/50 to-slate-800/50 p-6 backdrop-blur-lg">
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-4 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-red-300"
+            >
+              {error}
+            </motion.div>
+          )}
+
+          {/* Video Display */}
+          <div className="relative mb-6 overflow-hidden rounded-xl bg-black">
+            {/* Hidden video element */}
+            <video
+              ref={videoRef}
+              src="/demo/face_blur.mp4"
+              className="hidden"
+              loop
+              muted
+              playsInline
+            />
+
+            {/* Canvas for rendering with blur */}
+            <canvas
+              ref={canvasRef}
+              className="w-full h-auto"
+              style={{ maxHeight: "600px", objectFit: "contain" }}
+            />
+
+            {/* Stats Overlay */}
+            <AnimatePresence>
+              {isPlaying && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 10 }}
+                  className="absolute left-4 top-4 flex flex-col gap-2"
+                >
+                  <div className="rounded-lg bg-black/60 px-3 py-1.5 text-xs font-mono text-white backdrop-blur-lg">
+                    FPS: {fps}
+                  </div>
+                  <div className="rounded-lg bg-black/60 px-3 py-1.5 text-xs font-mono text-white backdrop-blur-lg">
+                    Faces: {detectionCount}
+                  </div>
+                  <div className="rounded-lg bg-emerald-500/20 px-3 py-1.5 text-xs font-semibold text-emerald-300 backdrop-blur-lg">
+                    ● LIVE
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Loading Overlay */}
+            {isLoading && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+                <div className="text-center">
+                  <div className="mb-3 inline-block h-10 w-10 animate-spin rounded-full border-4 border-cyan-500/30 border-t-cyan-500"></div>
+                  <p className="text-sm text-white">Loading model...</p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Controls */}
+          <div className="flex flex-wrap items-center gap-4">
+            <motion.button
+              onClick={togglePlayback}
+              disabled={isLoading || !!error}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className={`rounded-xl px-6 py-3 font-semibold transition-all ${
+                isPlaying
+                  ? "bg-red-500 text-white hover:bg-red-600"
+                  : "bg-emerald-500 text-white hover:bg-emerald-600"
+              } disabled:opacity-50 disabled:cursor-not-allowed`}
+            >
+              {isPlaying ? "⏸ Pause" : "▶ Start Detection"}
+            </motion.button>
+
+            {/* Blur Intensity Control */}
+            <div className="flex items-center gap-3">
+              <label className="text-sm text-slate-300">Blur Intensity:</label>
+              <input
+                type="range"
+                min="5"
+                max="30"
+                value={blurIntensity}
+                onChange={(e) => setBlurIntensity(Number(e.target.value))}
+                className="w-32"
+              />
+              <span className="text-sm font-mono text-cyan-300">{blurIntensity}px</span>
+            </div>
+
+            {/* Info */}
+            <div className="ml-auto flex items-center gap-2 text-sm text-slate-400">
+              <div className="flex h-6 w-6 items-center justify-center rounded-full bg-cyan-500/20">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  className="text-cyan-400"
+                >
+                  <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                  <path d="M2 17l10 5 10-5M2 12l10 5 10-5" />
+                </svg>
+              </div>
+              <span>UltraFace RFB-320 INT8</span>
+            </div>
+          </div>
+
+          {/* Feature Info */}
+          <div className="mt-6 grid gap-4 sm:grid-cols-3">
+            <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+              <div className="mb-2 flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-cyan-500/20">
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    className="text-cyan-400"
+                  >
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                    <circle cx="8.5" cy="8.5" r="1.5" />
+                    <path d="M21 15l-5-5L5 21" />
+                  </svg>
+                </div>
+                <h3 className="text-sm font-semibold text-white">Edge Processing</h3>
+              </div>
+              <p className="text-xs text-slate-400">
+                All processing happens locally in your browser. No data leaves your device.
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+              <div className="mb-2 flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500/20">
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    className="text-emerald-400"
+                  >
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                  </svg>
+                </div>
+                <h3 className="text-sm font-semibold text-white">Privacy First</h3>
+              </div>
+              <p className="text-xs text-slate-400">
+                Automatic face blurring protects identities in dashcam footage and street captures.
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+              <div className="mb-2 flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-purple-500/20">
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    className="text-purple-400"
+                  >
+                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+                  </svg>
+                </div>
+                <h3 className="text-sm font-semibold text-white">Real-time</h3>
+              </div>
+              <p className="text-xs text-slate-400">
+                Optimized INT8 quantized model runs efficiently on CPU with minimal latency.
+              </p>
+            </div>
+          </div>
+        </div>
+      </motion.div>
     </div>
   );
 }

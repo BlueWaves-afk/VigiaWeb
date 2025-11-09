@@ -68,7 +68,7 @@ export default function DocsTOC({ sections }: { sections: Section[] }) {
     <>
       {/* Desktop sticky sidebar */}
       <aside className="sticky top-24 hidden h-[calc(100vh-7rem)] w-full max-w-[260px] shrink-0 lg:block">
-        <div className="card-glass h-full overflow-auto p-3">
+        <div className="card-glass h-full overflow-auto no-scrollbar p-3">
           <div className="mb-2 px-2 text-xs uppercase tracking-wider text-white/50">
             On this page
           </div>

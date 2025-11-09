@@ -108,7 +108,7 @@ export default function SonicHero() {
                 {...springTap}
                 type="button"
                 onClick={scrollToCopilot}
-                className="rounded-lg bg-white px-4 py-2.5 font-medium text-slate-900 shadow hover:bg-white/90 focus:outline-none focus:ring-2 focus:ring-white/50"
+                className="cta-uniform rounded-lg bg-white px-4 py-2.5 font-medium text-slate-900 shadow hover:bg-white/90 focus:outline-none focus:ring-2 focus:ring-white/50"
               >
                 Try the Copilot
               </motion.button>
@@ -116,7 +116,7 @@ export default function SonicHero() {
               <motion.div {...springTap}>
                 <Link
                   href="/docs"
-                  className="rounded-lg border border-white/20 px-4 py-2.5 text-white/90 hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-white/20"
+                  className="cta-uniform rounded-lg border border-white/20 px-4 py-2.5 text-white/90 hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-white/20"
                 >
                   Read the docs
                 </Link>
@@ -125,7 +125,7 @@ export default function SonicHero() {
               <motion.button
                 {...springTap}
                 onClick={scrollToBenchmark}
-                className="inline-flex items-center gap-2 rounded-lg border border-emerald-400/30 bg-emerald-400/10 px-4 py-2.5 text-emerald-200 hover:bg-emerald-400/15 focus:outline-none focus:ring-2 focus:ring-emerald-400/30"
+                className="cta-uniform inline-flex items-center gap-2 rounded-lg border border-emerald-400/30 bg-emerald-400/10 px-4 py-2.5 text-emerald-200 hover:bg-emerald-400/15 focus:outline-none focus:ring-2 focus:ring-emerald-400/30"
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="-ml-0.5">
                   <path d="M3 3v18h18" />

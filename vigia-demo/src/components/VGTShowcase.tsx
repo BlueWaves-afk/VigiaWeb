@@ -37,10 +37,25 @@ function StatCard({
   return (
     <motion.div
       {...fadeUp(delay)}
-      className="group rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-lg transition-all duration-300 hover:border-white/20 hover:bg-white/10"
+      whileHover={{ 
+        y: -4,
+        scale: 1.02,
+        transition: { 
+          type: "spring",
+          stiffness: 400,
+          damping: 20
+        }
+      }}
+      whileTap={{ scale: 0.98 }}
+      className="group rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-lg transition-all duration-300 hover:border-cyan-400/30 hover:bg-white/10 hover:shadow-[0_0_30px_rgba(6,182,212,0.15)] cursor-pointer"
     >
       <div className="mb-3 flex items-center gap-3">
-        {icon}
+        <motion.div
+          whileHover={{ rotate: 5, scale: 1.1 }}
+          transition={{ type: "spring", stiffness: 400, damping: 10 }}
+        >
+          {icon}
+        </motion.div>
         <h4 className="text-sm font-semibold text-white">{title}</h4>
       </div>
       <div className="text-sm leading-relaxed text-slate-300">{children}</div>
@@ -103,27 +118,60 @@ export default function VgtTokenHero() {
           </motion.p>
 
           <motion.div {...fadeUp(0.25)} className="mt-8 flex flex-wrap items-center gap-3">
-            <motion.div {...springTap}>
+            <motion.div 
+              {...springTap}
+              whileHover={{ 
+                boxShadow: "0 20px 40px rgba(6, 182, 212, 0.3)",
+              }}
+            >
               <Link
-                href="/docs/token"
-                className="rounded-xl bg-white px-5 py-3 font-semibold text-slate-900 shadow-lg transition-all hover:shadow-xl"
+                href="/docs"
+                className="inline-flex items-center gap-2 rounded-xl bg-white px-5 py-3 font-semibold text-slate-900 shadow-lg transition-all hover:shadow-xl"
               >
                 Documentation
+                <motion.span
+                  initial={{ x: 0 }}
+                  whileHover={{ x: 3 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 10 }}
+                >
+                  →
+                </motion.span>
               </Link>
             </motion.div>
-            <motion.div {...springTap}>
+            <motion.div 
+              {...springTap}
+              whileHover={{ 
+                borderColor: "rgba(6, 182, 212, 0.5)",
+                backgroundColor: "rgba(6, 182, 212, 0.1)",
+              }}
+            >
               <Link
-                href="/wallet"
-                className="rounded-xl border border-white/15 bg-white/5 px-5 py-3 text-white/90 backdrop-blur-lg transition-all hover:bg-white/10 hover:border-white/25"
+                href="/dashboard"
+                className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-5 py-3 text-white/90 backdrop-blur-lg transition-all hover:bg-white/10 hover:border-white/25"
               >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                  <line x1="12" y1="8" x2="12" y2="16"/>
+                  <line x1="8" y1="12" x2="16" y2="12"/>
+                </svg>
                 Open Wallet
               </Link>
             </motion.div>
-            <motion.div {...springTap}>
+            <motion.div 
+              {...springTap}
+              whileHover={{ 
+                borderColor: "rgba(168, 85, 247, 0.5)",
+                backgroundColor: "rgba(168, 85, 247, 0.1)",
+              }}
+            >
               <Link
-                href="/developers"
-                className="rounded-xl border border-white/15 bg-white/5 px-5 py-3 text-white/90 backdrop-blur-lg transition-all hover:bg-white/10 hover:border-white/25"
+                href="/auth/signin"
+                className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-5 py-3 text-white/90 backdrop-blur-lg transition-all hover:bg-white/10 hover:border-white/25"
               >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <polyline points="16 18 22 12 16 6"/>
+                  <polyline points="8 6 2 12 8 18"/>
+                </svg>
                 Build with VGT
               </Link>
             </motion.div>
@@ -183,39 +231,212 @@ export default function VgtTokenHero() {
         {/* RIGHT: phone mock / wallet preview */}
         <motion.div
           initial={{ opacity: 0, y: 20, scale: 0.95 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
+          whileInView={{ opacity: 1, y: 0, scale: 1 }}
+          viewport={{ once: true, margin: "-100px" }}
           transition={{ delay: 0.15, duration: 0.7, ease: "easeOut" as const }}
-          className="relative rounded-2xl border border-white/10 bg-gradient-to-br from-slate-800/50 to-slate-900/70 p-6 backdrop-blur-xl"
+          whileHover={{ scale: 1.02 }}
+          className="relative rounded-2xl border border-white/10 bg-gradient-to-br from-slate-800/50 to-slate-900/70 p-6 backdrop-blur-xl hover:border-cyan-400/30 transition-all duration-300"
         >
-          <div className="mb-4 text-sm font-medium text-white/80">Wallet Preview</div>
+          <motion.div 
+            className="mb-4 text-sm font-medium text-white/80"
+            initial={{ opacity: 0, x: -10 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.2 }}
+          >
+            Wallet Preview
+          </motion.div>
 
           {/* Glassy phone frame */}
-          <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-slate-900 to-slate-800 p-1 shadow-2xl">
+          <motion.div 
+            className="relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-slate-900 to-slate-800 p-1 shadow-2xl"
+            initial={{ opacity: 0, scale: 0.95 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.3, duration: 0.5 }}
+            whileHover={{ boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)" }}
+          >
             <div className="relative h-[420px] w-full overflow-hidden rounded-xl bg-gradient-to-br from-cyan-500/5 to-purple-500/5">
               {/* Wallet UI Mockup */}
               <div className="absolute inset-0 p-6">
                 {/* Header */}
-                <div className="mb-6">
-                  <div className="h-6 w-32 rounded-full bg-white/10"></div>
-                  <div className="mt-2 h-4 w-24 rounded-full bg-white/5"></div>
-                </div>
+                <motion.div 
+                  className="mb-6"
+                  initial={{ opacity: 0, x: -20 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.4 }}
+                >
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="h-8 w-8 rounded-full bg-gradient-to-r from-cyan-400 to-fuchsia-400 flex items-center justify-center">
+                      <span className="text-xs font-bold text-slate-900">VGT</span>
+                    </div>
+                    <div>
+                      <div className="text-xs text-slate-500">Contributor Wallet</div>
+                      <div className="text-sm font-semibold text-white">0x742d...3f8a</div>
+                    </div>
+                  </div>
+                </motion.div>
                 
                 {/* Balance Card */}
-                <div className="mb-6 rounded-xl bg-gradient-to-r from-cyan-500/10 to-purple-500/10 p-4 ring-1 ring-white/10">
-                  <div className="text-sm text-slate-400">Total Balance</div>
-                  <div className="mt-1 text-2xl font-bold text-white">12,186.35 VGT</div>
-                  <div className="mt-2 flex items-center gap-2">
-                    <div className="h-6 w-16 rounded-full bg-emerald-500/20"></div>
-                    <div className="text-sm text-emerald-400">+2.6%</div>
+                <motion.div 
+                  className="mb-6 rounded-xl bg-gradient-to-r from-cyan-500/10 to-purple-500/10 p-4 ring-1 ring-white/10"
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.5, type: "spring", stiffness: 200 }}
+                  whileHover={{ scale: 1.02, boxShadow: "0 10px 30px rgba(6, 182, 212, 0.2)" }}
+                >
+                  <div className="text-xs text-slate-400 uppercase tracking-wide">Total Balance</div>
+                  <motion.div 
+                    className="mt-1 text-3xl font-bold text-white"
+                    initial={{ opacity: 0, y: 10 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: 0.6 }}
+                  >
+                    12,186.35 <span className="text-xl text-slate-400">VGT</span>
+                  </motion.div>
+                  <div className="mt-3 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <motion.div 
+                        className="flex items-center gap-1 rounded-full bg-emerald-500/20 px-2 py-1"
+                        initial={{ width: 0, opacity: 0 }}
+                        whileInView={{ width: "auto", opacity: 1 }}
+                        viewport={{ once: true }}
+                        transition={{ delay: 0.7, duration: 0.5 }}
+                      >
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="text-emerald-400">
+                          <polyline points="18 15 12 9 6 15" />
+                        </svg>
+                        <span className="text-xs font-semibold text-emerald-400">+2.6%</span>
+                      </motion.div>
+                      <motion.span 
+                        className="text-xs text-slate-500"
+                        initial={{ opacity: 0 }}
+                        whileInView={{ opacity: 1 }}
+                        viewport={{ once: true }}
+                        transition={{ delay: 0.8 }}
+                      >
+                        +1,320 VGT
+                      </motion.span>
+                    </div>
+                    <motion.div 
+                      className="text-xs text-slate-500"
+                      initial={{ opacity: 0 }}
+                      whileInView={{ opacity: 1 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: 0.8 }}
+                    >
+                      Last 30 days
+                    </motion.div>
                   </div>
-                </div>
+                </motion.div>
                 
                 {/* Activity */}
-                <div className="space-y-3">
-                  <div className="h-12 rounded-lg bg-white/5"></div>
-                  <div className="h-12 rounded-lg bg-white/5"></div>
-                  <div className="h-12 rounded-lg bg-white/5"></div>
-                </div>
+                <motion.div 
+                  initial="hidden"
+                  whileInView="visible"
+                  viewport={{ once: true }}
+                  variants={{
+                    hidden: {},
+                    visible: {
+                      transition: {
+                        staggerChildren: 0.1,
+                        delayChildren: 0.7
+                      }
+                    }
+                  }}
+                >
+                  <motion.div
+                    variants={{
+                      hidden: { opacity: 0 },
+                      visible: { opacity: 1 }
+                    }}
+                    className="text-xs text-slate-400 uppercase tracking-wide mb-3"
+                  >
+                    Recent Activity
+                  </motion.div>
+                  <div className="space-y-2">
+                    <motion.div
+                      variants={{
+                        hidden: { opacity: 0, x: -20 },
+                        visible: { opacity: 1, x: 0 }
+                      }}
+                      className="flex items-center justify-between rounded-lg bg-white/5 p-3 hover:bg-white/10 transition-colors cursor-pointer"
+                      whileHover={{ x: 4 }}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500/20">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-emerald-400">
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
+                        </div>
+                        <div>
+                          <div className="text-xs font-medium text-white">Hazard Validated</div>
+                          <div className="text-xs text-slate-500">Pothole • Mumbai</div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-xs font-semibold text-emerald-400">+15.5 VGT</div>
+                        <div className="text-xs text-slate-500">2h ago</div>
+                      </div>
+                    </motion.div>
+
+                    <motion.div
+                      variants={{
+                        hidden: { opacity: 0, x: -20 },
+                        visible: { opacity: 1, x: 0 }
+                      }}
+                      className="flex items-center justify-between rounded-lg bg-white/5 p-3 hover:bg-white/10 transition-colors cursor-pointer"
+                      whileHover={{ x: 4 }}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-cyan-500/20">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-cyan-400">
+                            <circle cx="12" cy="12" r="10" />
+                            <path d="M12 6v6l4 2" />
+                          </svg>
+                        </div>
+                        <div>
+                          <div className="text-xs font-medium text-white">V2X Contribution</div>
+                          <div className="text-xs text-slate-500">Network consensus</div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-xs font-semibold text-cyan-400">+8.2 VGT</div>
+                        <div className="text-xs text-slate-500">5h ago</div>
+                      </div>
+                    </motion.div>
+
+                    <motion.div
+                      variants={{
+                        hidden: { opacity: 0, x: -20 },
+                        visible: { opacity: 1, x: 0 }
+                      }}
+                      className="flex items-center justify-between rounded-lg bg-white/5 p-3 hover:bg-white/10 transition-colors cursor-pointer"
+                      whileHover={{ x: 4 }}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-purple-500/20">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-purple-400">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                            <polyline points="7 10 12 15 17 10" />
+                            <line x1="12" y1="15" x2="12" y2="3" />
+                          </svg>
+                        </div>
+                        <div>
+                          <div className="text-xs font-medium text-white">Data Contribution</div>
+                          <div className="text-xs text-slate-500">25km coverage</div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-xs font-semibold text-purple-400">+12.0 VGT</div>
+                        <div className="text-xs text-slate-500">8h ago</div>
+                      </div>
+                    </motion.div>
+                  </div>
+                </motion.div>
               </div>
             </div>
             
@@ -223,51 +444,119 @@ export default function VgtTokenHero() {
             <div className="pointer-events-none absolute left-4 top-4 grid gap-2">
               <motion.div
                 initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.4 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.5 }}
+                whileHover={{ scale: 1.05 }}
                 className="inline-flex items-center gap-2 rounded-full bg-black/60 px-3 py-1.5 text-xs text-white/90 backdrop-blur-lg ring-1 ring-white/10"
               >
                 Balance <span className="font-mono font-semibold">12,186.35 VGT</span>
               </motion.div>
               <motion.div
                 initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.5 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.6 }}
+                whileHover={{ scale: 1.05 }}
                 className="inline-flex items-center gap-2 rounded-full bg-emerald-500/20 px-3 py-1.5 text-xs text-emerald-200 backdrop-blur-lg ring-1 ring-emerald-500/30"
               >
                 +1,320 <span className="text-emerald-300 font-semibold">+2.6%</span>
               </motion.div>
             </div>
-          </div>
+          </motion.div>
 
           {/* CTA row under preview */}
-          <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
-            <div className="text-sm text-slate-400">
+          <motion.div 
+            className="mt-6 flex flex-wrap items-center justify-between gap-3"
+            initial={{ opacity: 0, y: 10 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.9 }}
+          >
+            <motion.div 
+              className="text-sm text-slate-400"
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              transition={{ delay: 1.0 }}
+            >
               Rewards tracked on-chain • Transparent distribution
-            </div>
+            </motion.div>
             <div className="flex items-center gap-2">
-              <motion.div {...springTap}>
+              <motion.div 
+                {...springTap}
+                initial={{ opacity: 0, scale: 0.9 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: 1.1 }}
+                whileHover={{ 
+                  borderColor: "rgba(6, 182, 212, 0.5)",
+                  backgroundColor: "rgba(6, 182, 212, 0.1)",
+                }}
+              >
                 <Link
-                  href="/airdrop"
-                  className="rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm text-white/90 backdrop-blur-lg transition-all hover:bg-white/10 hover:border-white/25"
+                  href="/pricing"
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm text-white/90 backdrop-blur-lg transition-all hover:bg-white/10 hover:border-white/25"
                 >
-                  Claim Airdrop
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M12 6v6l4 2" />
+                  </svg>
+                  Pricing
                 </Link>
               </motion.div>
-              <motion.div {...springTap}>
+              <motion.div 
+                {...springTap}
+                initial={{ opacity: 0, scale: 0.9 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: 1.2 }}
+                whileHover={{ 
+                  boxShadow: "0 10px 30px rgba(255, 255, 255, 0.3)",
+                }}
+              >
                 <Link
-                  href="/earn"
-                  className="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-900 shadow-lg transition-all hover:shadow-xl hover:-translate-y-0.5"
+                  href="/auth/signup"
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-900 shadow-lg transition-all hover:shadow-xl hover:-translate-y-0.5"
                 >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                    <circle cx="9" cy="7" r="4" />
+                    <line x1="19" y1="8" x2="19" y2="14" />
+                    <line x1="22" y1="11" x2="16" y2="11" />
+                  </svg>
                   Start Earning
                 </Link>
               </motion.div>
             </div>
-          </div>
+          </motion.div>
 
           {/* Decorative glow */}
-          <div className="pointer-events-none absolute -right-24 -top-24 h-48 w-48 rounded-full bg-cyan-500/20 blur-3xl" />
-          <div className="pointer-events-none absolute -bottom-24 -left-24 h-48 w-48 rounded-full bg-fuchsia-500/20 blur-3xl" />
+          <motion.div 
+            className="pointer-events-none absolute -right-24 -top-24 h-48 w-48 rounded-full bg-cyan-500/20 blur-3xl"
+            animate={{ 
+              scale: [1, 1.2, 1],
+              opacity: [0.2, 0.3, 0.2]
+            }}
+            transition={{ 
+              duration: 4,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }}
+          />
+          <motion.div 
+            className="pointer-events-none absolute -bottom-24 -left-24 h-48 w-48 rounded-full bg-fuchsia-500/20 blur-3xl"
+            animate={{ 
+              scale: [1, 1.3, 1],
+              opacity: [0.2, 0.25, 0.2]
+            }}
+            transition={{ 
+              duration: 5,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: 1
+            }}
+          />
         </motion.div>
       </div>
     </section>

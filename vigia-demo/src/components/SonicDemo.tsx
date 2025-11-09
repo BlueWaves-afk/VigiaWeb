@@ -31,6 +31,7 @@ export default function SonicDemo() {
   const [log, setLog] = useState<LogLine[]>([]);
   const [active, setActive] = useState(false);
   const [hazardPulse, setHazardPulse] = useState(0);
+  const [copilotRunning, setCopilotRunning] = useState(false);
 
   const sectionRef = useRef<HTMLDivElement | null>(null);
   const ragRef = useRef<Worker | null>(null);
@@ -180,23 +181,25 @@ export default function SonicDemo() {
         const v = entries[0].isIntersecting;
         inViewRef.current = v;
         setActive(v);
-        if (v) {
+        if (v && copilotRunning) {
           pushLog("SYS", "Sonic demo activated (scroll to drive)");
           ragRef.current?.postMessage({ ...posRef.current, isRain: false, city: "bangalore", k: 3 });
-        } else {
+        } else if (!v) {
           window.speechSynthesis.cancel();
-          pushLog("SYS", "Sonic demo deactivated");
+          if (copilotRunning) {
+            pushLog("SYS", "Sonic demo deactivated");
+          }
         }
       },
       { root: null, threshold: 0.5 }
     );
     obs.observe(sectionRef.current);
     return () => obs.disconnect();
-  }, [pushLog]);
+  }, [pushLog, copilotRunning]);
 
-  // wheel handler (local to this section)
+  // wheel handler (local to this section, only active when copilot is running)
   const onWheel = useCallback((event: WheelEvent) => {
-    if (!inViewRef.current) return;
+    if (!inViewRef.current || !copilotRunning) return;
     event.preventDefault();
 
     const meters = Math.max(-50, Math.min(50, -event.deltaY * 0.6));
@@ -205,7 +208,7 @@ export default function SonicDemo() {
     setPos(next);
 
     ragRef.current?.postMessage({ ...next, isRain: false, city: "bangalore", k: 3 });
-  }, []);
+  }, [copilotRunning]);
 
   useEffect(() => {
     const section = sectionRef.current;
@@ -216,7 +219,7 @@ export default function SonicDemo() {
 
   // keyboard ↑/↓ support (optional)
   const onKey = useCallback((e: React.KeyboardEvent) => {
-    if (!inViewRef.current) return;
+    if (!inViewRef.current || !copilotRunning) return;
     if (e.key !== "ArrowUp" && e.key !== "ArrowDown") return;
     e.preventDefault();
     const meters = e.key === "ArrowUp" ? 24 : -24;
@@ -224,7 +227,19 @@ export default function SonicDemo() {
     const next = { ...posRef.current, lat: posRef.current.lat + dLat, lng: posRef.current.lng + dLng };
     setPos(next);
     ragRef.current?.postMessage({ ...next, isRain: false, city: "bangalore", k: 3 });
-  }, []);
+  }, [copilotRunning]);
+
+  const handleStartCopilot = () => {
+    setCopilotRunning(true);
+    pushLog("SYS", "Copilot started - scroll to drive");
+    ragRef.current?.postMessage({ ...posRef.current, isRain: false, city: "bangalore", k: 3 });
+  };
+
+  const handleStopCopilot = () => {
+    setCopilotRunning(false);
+    window.speechSynthesis.cancel();
+    pushLog("SYS", "Copilot stopped");
+  };
 
   return (
     <section
@@ -248,6 +263,25 @@ export default function SonicDemo() {
           Bengaluru, recalls nearby hazards from memory, and <b className="text-emerald-300">speaks before</b> you reach them.
           Scroll up to go back. Scrolling outside this section stops the demo.
         </p>
+
+        {/* Start/Stop Copilot Button */}
+        <div className="mt-6 flex items-center gap-4">
+          {!copilotRunning ? (
+            <button
+              onClick={handleStartCopilot}
+              className="rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 px-6 py-3 font-semibold text-white shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 transition-all hover:scale-105"
+            >
+              Start Copilot
+            </button>
+          ) : (
+            <button
+              onClick={handleStopCopilot}
+              className="rounded-xl bg-gradient-to-r from-red-500 to-orange-500 px-6 py-3 font-semibold text-white shadow-lg shadow-red-500/25 hover:shadow-red-500/40 transition-all hover:scale-105"
+            >
+              Stop Copilot
+            </button>
+          )}
+        </div>
 
         {/* Enhanced terminal-style console */}
         <div className="mt-8 overflow-hidden rounded-2xl border border-white/10 bg-slate-900/80 shadow-2xl backdrop-blur-lg">

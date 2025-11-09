@@ -2,7 +2,7 @@ import BackgroundFX from "@/components/BackgroundFX";
 import TopBar from "@/components/TopBar";
 import SonicHero from "@/components/SonicHero";
 import SonicDemo from "@/components/SonicDemo";
-import FeatureRows from "@/components/FeatureRows";
+
 import CodeDemo from "@/components/CodeDemo";
 import SiteFooter from "@/components/SiteFooter";
 import DeveloperSection from "@/components/DeveloperSection";
@@ -29,8 +29,7 @@ export default function Home() {
       <MapSection/>
       <DeveloperSection />
       <BenchmarkDemo />
-      <FeatureRows />
-      <CodeDemo />
+
       <SiteFooter />
     </main>
   );

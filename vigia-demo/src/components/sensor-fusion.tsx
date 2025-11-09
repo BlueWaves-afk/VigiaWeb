@@ -858,7 +858,7 @@ export default function SensorFusionPage() {
           const action = applyFusionMitigation(entry);
           const sensorsUsed = source === "none" ? "baseline" : source;
           log(
-            `FUSION ✓ (${sensorsUsed}) ${HAZARD_META[entry.hazard.kind].label} @${entry.edgeId} p=${hazardProb.toFixed(2)} sev=${entry.severityEma.toFixed(2)} → ${action}`,
+            `FUSION (${sensorsUsed}) ${HAZARD_META[entry.hazard.kind].label} @${entry.edgeId} p=${hazardProb.toFixed(2)} sev=${entry.severityEma.toFixed(2)} → ${action}`,
             "fusion",
           );
         }
