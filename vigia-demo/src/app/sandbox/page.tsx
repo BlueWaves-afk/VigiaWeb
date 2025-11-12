@@ -14,6 +14,7 @@ import {
   LineChart,
   BotMessageSquare,
   Gauge, // new: speed icon
+  Cpu,
 } from "lucide-react";
 import type { JSX } from "react/jsx-runtime";
 
@@ -26,6 +27,7 @@ const ArgusAegisDemo    = dynamic(() => import("../../components/AegisDemo"), { 
 // NEW: Browser ONNX demo (speed-only FPS)
 const ArgusBrowserDemo  = dynamic(() => import("../../components/ArgusBrowserDemo"), { ssr: false });
 const CopilotGeoRAG  = dynamic(() => import("../../components/CopilotGeoRAG"), { ssr: false });
+const OnDeviceFineTuning = dynamic(() => import("../../components/OnDeviceFineTuning"), { ssr: false });
 
 type TabKey =
   | "aegis"
@@ -34,7 +36,8 @@ type TabKey =
   | "dbscan"
   | "forecast"
   | "copilot"
-  | "argus_web"; // NEW
+  | "argus_web"
+  | "on_device"; // NEW
 
 const NAV: { key: TabKey; label: string; desc: string }[] = [
   { key: "aegis",     label: "Aegis",        desc: "Privacy-first perception (blur faces & plates)" },
@@ -44,6 +47,7 @@ const NAV: { key: TabKey; label: string; desc: string }[] = [
   { key: "dbscan",    label: "DBSCAN Clustering",    desc: "Cluster & deduplicate reports" },
   { key: "forecast",  label: "Predictive Forecast",  desc: "Hazard density projections" },
   { key: "copilot",   label: "Co-Pilot (Geo-RAG)",   desc: "Generative guidance from geospatial context" },
+  { key: "on_device", label: "On-Device Fine Tuning", desc: "Federated hazard resolution" },
 ];
 
 // Icons for collapsed state
@@ -55,6 +59,7 @@ const ICONS: Record<TabKey, JSX.Element> = {
   dbscan:    <Network size={18} />,
   forecast:  <LineChart size={18} />,
   copilot:   <BotMessageSquare size={18} />,
+  on_device: <Cpu size={18} />,
 };
 
 export default function SandboxPage() {
@@ -229,6 +234,7 @@ export default function SandboxPage() {
           {tab === "dbscan"    && <DBSCANDemo />}
           {tab === "copilot"   && <CopilotGeoRAG />}
           {tab === "forecast"  && <ForecastDemo />}
+          {tab === "on_device" && <OnDeviceFineTuning />}
         </section>
       </div>
 

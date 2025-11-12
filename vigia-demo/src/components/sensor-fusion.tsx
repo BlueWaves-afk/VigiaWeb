@@ -319,6 +319,85 @@ function ToggleChip({ label, active, onClick }: { label: string; active: boolean
   );
 }
 
+function Legend() {
+  const legendItems = [
+    {
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 24 24">
+          <circle r={6} fill="#f97316" cx="12" cy="12" />
+        </svg>
+      ),
+      label: "Pothole",
+      color: "#f97316",
+    },
+    {
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 24 24">
+          <rect x={7} y={7} width={10} height={10} fill="#eab308" rx={2} />
+        </svg>
+      ),
+      label: "Debris",
+      color: "#eab308",
+    },
+    {
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 24 24">
+          <path d="M12 3l9 16H3L12 3z" fill="#ef4444" />
+        </svg>
+      ),
+      label: "Speed Breaker",
+      color: "#ef4444",
+    },
+    {
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="8" stroke="#38bdf8" strokeWidth="1.5" fill="none" />
+          <circle cx="12" cy="12" r="4" stroke="#38bdf8" strokeWidth="1" fill="rgba(56, 189, 248, 0.2)" />
+        </svg>
+      ),
+      label: "Vision",
+      color: "#38bdf8",
+    },
+    {
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 90 50">
+          <rect x="8" y="12" width="74" height="22" rx="6" fill="#38bdf8" />
+          <rect x="28" y="6" width="34" height="10" rx="4" fill="#38bdf8" opacity={0.9} />
+          <circle cx="26" cy="38" r="6" fill="#0b1220" />
+          <circle cx="64" cy="38" r="6" fill="#0b1220" />
+        </svg>
+      ),
+      label: "Vehicle",
+      color: "#38bdf8",
+    },
+    {
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="9" fill="none" stroke="#fbbf24" strokeWidth="1.5" strokeDasharray="4 3" opacity={0.8} />
+        </svg>
+      ),
+      label: "Fusion Active",
+      color: "#fbbf24",
+    },
+  ];
+
+  return (
+    <div className="card-glass p-4">
+      <div className="mb-3 text-sm font-semibold text-white/70">Map Symbols</div>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        {legendItems.map((item, idx) => (
+          <div key={idx} className="flex items-center gap-2.5">
+            <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-white/5">
+              {item.icon}
+            </div>
+            <div className="text-xs font-medium text-white/80">{item.label}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function SensorFusionPage() {
   const [isSimulationRunning, setIsSimulationRunning] = useState(false);
   const [edges, setEdges] = useState<Edge[]>(() => EDGES_BASE.map((e) => ({ ...e, hazards: [] })));
@@ -1100,6 +1179,8 @@ export default function SensorFusionPage() {
               })}
             </svg>
           </div>
+
+          <Legend />
 
           <div className="card-glass grid gap-3 p-4 sm:grid-cols-3">
             <div className="rounded-xl bg-white/5 p-3">
