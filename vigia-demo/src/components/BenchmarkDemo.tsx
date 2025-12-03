@@ -100,11 +100,13 @@ export default function BenchmarkDemo() {
   };
 
   return (
-    <section id="benchmark-demo" className="relative py-24 px-6">
-      {/* Background gradient */}
-      <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-slate-900/50 to-slate-950 pointer-events-none" />
-      
-      <div className="relative mx-auto max-w-7xl">
+    <section id="benchmark-demo" className="relative overflow-hidden bg-[#0B1120] pb-24">
+      {/* Fine grid background pattern */}
+      <div className="pointer-events-none absolute inset-0 opacity-30">
+        <div className="h-full w-full bg-[linear-gradient(to_right,rgba(56,189,248,.06)_1px,transparent_1px),linear-gradient(to_bottom,rgba(56,189,248,.06)_1px,transparent_1px)] bg-[size:4px_4px]" />
+      </div>
+
+      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -123,22 +125,22 @@ export default function BenchmarkDemo() {
             <Zap className="h-4 w-4 text-emerald-400" />
             <span className="text-sm font-medium text-emerald-300">Real Benchmark Results</span>
           </motion.div>
-          
+
           <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
             ARGUS v8x vs{" "}
-            <span className="bg-gradient-to-r from-emerald-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent">
+            <span className="text-cyan-400">
               Simple YOLO
             </span>
           </h2>
           <p className="text-lg text-white/70 max-w-2xl mx-auto mb-6">
             Measured on M2 MacBook Pro with CPUExecutionProvider. Batch=1 metrics, 200 runs, 20 warmup iterations.
           </p>
-          
+
           <Link href="/benchmark">
             <motion.button
               whileHover={{ scale: 1.05, y: -2 }}
               whileTap={{ scale: 0.95 }}
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 text-white font-semibold shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 transition-shadow"
+              className="inline-flex items-center gap-2 px-8 py-3.5 rounded-full bg-gradient-to-r from-emerald-500 to-cyan-500 text-white font-semibold shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 transition-shadow"
             >
               <BarChart3 className="h-5 w-5" />
               View Full Benchmark Results
@@ -159,7 +161,7 @@ export default function BenchmarkDemo() {
             whileHover={{ scale: 1.02, y: -4 }}
             onHoverStart={() => setHoveredCard("speed")}
             onHoverEnd={() => setHoveredCard(null)}
-            className="relative rounded-2xl border border-white/10 bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-sm p-6"
+            className="relative border border-slate-700/60 bg-gradient-to-br from-slate-900/40 to-slate-950/40 backdrop-blur-sm p-6"
           >
             <div className="flex items-center gap-3 mb-4">
               <div className="p-3 rounded-xl bg-emerald-500/10">
@@ -227,16 +229,7 @@ export default function BenchmarkDemo() {
               Throughput: +{throughputGain.toFixed(1)}%
             </div>
 
-            <AnimatePresence>
-              {hoveredCard === "speed" && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="absolute inset-0 rounded-2xl bg-gradient-to-br from-emerald-500/10 to-cyan-500/10 pointer-events-none"
-                />
-              )}
-            </AnimatePresence>
+
           </motion.div>
 
           {/* 2. FOOTPRINT CARD */}
@@ -244,7 +237,7 @@ export default function BenchmarkDemo() {
             whileHover={{ scale: 1.02, y: -4 }}
             onHoverStart={() => setHoveredCard("footprint")}
             onHoverEnd={() => setHoveredCard(null)}
-            className="relative rounded-2xl border border-white/10 bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-sm p-6"
+            className="relative border border-slate-700/60 bg-gradient-to-br from-slate-900/40 to-slate-950/40 backdrop-blur-sm p-6"
           >
             <div className="flex items-center gap-3 mb-4">
               <div className="p-3 rounded-xl bg-blue-500/10">
@@ -310,16 +303,7 @@ export default function BenchmarkDemo() {
               Trade-off: Slightly more memory for better accuracy
             </div>
 
-            <AnimatePresence>
-              {hoveredCard === "footprint" && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="absolute inset-0 rounded-2xl bg-gradient-to-br from-blue-500/10 to-purple-500/10 pointer-events-none"
-                />
-              )}
-            </AnimatePresence>
+
           </motion.div>
 
           {/* 3. STABILITY CARD */}
@@ -327,7 +311,7 @@ export default function BenchmarkDemo() {
             whileHover={{ scale: 1.02, y: -4 }}
             onHoverStart={() => setHoveredCard("stability")}
             onHoverEnd={() => setHoveredCard(null)}
-            className="relative rounded-2xl border border-white/10 bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-sm p-6"
+            className="relative border border-slate-700/60 bg-gradient-to-br from-slate-900/40 to-slate-950/40 backdrop-blur-sm p-6"
           >
             <div className="flex items-center gap-3 mb-4">
               <div className="p-3 rounded-xl bg-cyan-500/10">
@@ -393,16 +377,7 @@ export default function BenchmarkDemo() {
               Lower tail latency & jitter
             </div>
 
-            <AnimatePresence>
-              {hoveredCard === "stability" && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="absolute inset-0 rounded-2xl bg-gradient-to-br from-cyan-500/10 to-emerald-500/10 pointer-events-none"
-                />
-              )}
-            </AnimatePresence>
+
           </motion.div>
         </motion.div>
 
@@ -412,13 +387,13 @@ export default function BenchmarkDemo() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ delay: 0.3, duration: 0.5 }}
-          className="mb-16 rounded-2xl border border-white/5 bg-gradient-to-br from-slate-800/40 to-slate-900/40 backdrop-blur-sm p-6"
+          className="mb-16 border border-slate-700/60 bg-gradient-to-br from-slate-900/40 to-slate-950/40 backdrop-blur-sm p-6"
         >
           <div className="flex items-center gap-3 mb-4">
             <Gauge className="h-5 w-5 text-white/40" />
             <h3 className="text-white/60 font-medium">UltraFace (Edge Privacy Module)</h3>
           </div>
-          
+
           <div className="grid gap-4 md:grid-cols-3">
             <div className="p-4 rounded-xl bg-white/5 border border-white/5">
               <div className="text-xs text-white/50 mb-1">Speed</div>
@@ -462,7 +437,7 @@ export default function BenchmarkDemo() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ delay: 0.4, duration: 0.5 }}
-          className="rounded-2xl border border-white/10 bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-sm p-8"
+          className="border border-slate-700/60 bg-gradient-to-br from-slate-900/40 to-slate-950/40 backdrop-blur-sm p-8"
         >
           <div className="flex items-center gap-3 mb-8">
             <Target className="h-7 w-7 text-emerald-400" />
@@ -479,7 +454,7 @@ export default function BenchmarkDemo() {
                 transition={{ delay: 0.1 * idx, duration: 0.4 }}
                 onHoverStart={() => setHoveredMetric(metric.name)}
                 onHoverEnd={() => setHoveredMetric(null)}
-                className="relative rounded-xl border border-white/10 bg-gradient-to-br from-white/5 to-transparent p-5"
+                className="relative border border-slate-700/60 bg-gradient-to-br from-slate-900/40 to-slate-950/40 p-5"
               >
                 <div className="flex items-center gap-2 mb-3">
                   <metric.icon className="h-5 w-5 text-emerald-400" />
@@ -507,25 +482,16 @@ export default function BenchmarkDemo() {
                   />
                 </div>
 
-                <AnimatePresence>
-                  {hoveredMetric === metric.name && (
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      className="absolute inset-0 rounded-xl bg-gradient-to-br from-emerald-500/10 to-cyan-500/10 pointer-events-none"
-                    />
-                  )}
-                </AnimatePresence>
+
               </motion.div>
             ))}
           </div>
 
           <div className="mt-6 p-4 rounded-xl bg-white/5 border border-white/5">
             <p className="text-sm text-white/70">
-              <span className="font-semibold text-emerald-300">+10% absolute mAP gain</span> through SimAM attention and Swin Transformer improvements. 
-              Edge case handling improved by <span className="font-semibold text-cyan-300">+30%</span>, 
-              low-light by <span className="font-semibold text-cyan-300">+35%</span>, 
+              <span className="font-semibold text-emerald-300">+10% absolute mAP gain</span> through SimAM attention and Swin Transformer improvements.
+              Edge case handling improved by <span className="font-semibold text-cyan-300">+30%</span>,
+              low-light by <span className="font-semibold text-cyan-300">+35%</span>,
               multi-scale by <span className="font-semibold text-cyan-300">+20%</span>.
             </p>
           </div>
@@ -539,7 +505,7 @@ export default function BenchmarkDemo() {
           transition={{ delay: 0.6, duration: 0.5 }}
           className="text-center text-sm text-white/50 mt-8"
         >
-          Benchmarks: M2 MacBook Pro, CPUExecutionProvider, batch=1 for interactive latency. 
+          Benchmarks: M2 MacBook Pro, CPUExecutionProvider, batch=1 for interactive latency.
           Stability = geomean(p90/p50, p99/p50, std/mean). Lower stability index is better.
         </motion.p>
       </div>

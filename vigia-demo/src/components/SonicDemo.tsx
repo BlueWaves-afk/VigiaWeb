@@ -35,6 +35,7 @@ export default function SonicDemo() {
 
   const sectionRef = useRef<HTMLDivElement | null>(null);
   const ragRef = useRef<Worker | null>(null);
+  const demoCardsRef = useRef<HTMLDivElement | null>(null);
   const speakCooldownRef = useRef<Record<string, number>>({});
   const posRef = useRef(pos);
   const inViewRef = useRef(false);
@@ -56,11 +57,11 @@ export default function SonicDemo() {
   // Hazard pulsing animation
   useEffect(() => {
     if (!active) return;
-    
+
     hazardTimerRef.current = setInterval(() => {
       setHazardPulse(prev => (prev + 1) % 4);
     }, 800);
-    
+
     return () => {
       if (hazardTimerRef.current) {
         clearInterval(hazardTimerRef.current);
@@ -160,14 +161,14 @@ export default function SonicDemo() {
         u.pitch = 1.0;
         window.speechSynthesis.speak(u);
         pushLog("TTS", `"${line}"`);
-      } catch {/* no-op */}
+      } catch {/* no-op */ }
       speakCooldownRef.current[key] = Date.now();
     };
 
-    return () => { 
+    return () => {
       if (ragRef.current) {
-        ragRef.current.terminate(); 
-        ragRef.current = null; 
+        ragRef.current.terminate();
+        ragRef.current = null;
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -233,6 +234,15 @@ export default function SonicDemo() {
     setCopilotRunning(true);
     pushLog("SYS", "Copilot started - scroll to drive");
     ragRef.current?.postMessage({ ...posRef.current, isRain: false, city: "bangalore", k: 3 });
+
+    // Smoothly scroll terminal/map pair into view so controls appear immediately
+    requestAnimationFrame(() => {
+      const cardsEl = demoCardsRef.current;
+      if (!cardsEl) return;
+      const rect = cardsEl.getBoundingClientRect();
+      const top = rect.top + window.scrollY - 120; // keep hero partially visible
+      window.scrollTo({ top: Math.max(top, 0), behavior: "smooth" });
+    });
   };
 
   const handleStopCopilot = () => {
@@ -247,123 +257,200 @@ export default function SonicDemo() {
       ref={sectionRef}
       onKeyDown={onKey}
       tabIndex={0}
-  className="relative mx-auto mt-28 grid w-full max-w-6xl grid-cols-1 gap-10 rounded-2xl bg-gradient-to-br from-slate-900/60 to-slate-950/80 p-8 ring-1 ring-white/10 backdrop-blur-xl md:grid-cols-2"
-  style={{ scrollMarginTop: "96px", overscrollBehavior: "contain" }}
+      className="relative min-h-screen overflow-hidden bg-[#0B1120] pb-24"
+      style={{ scrollMarginTop: "96px", overscrollBehavior: "contain" }}
     >
-      {/* Background glow effect */}
-      <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-cyan-500/5 via-transparent to-purple-500/5" />
-      
-      {/* Left text column */}
-      <div className="relative z-10">
-        <h2 className="text-5xl font-semibold tracking-tight text-white md:text-6xl">
-          Contextual <span className="bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">Awareness</span>
-        </h2>
-        <p className="mt-6 max-w-xl text-lg leading-relaxed text-slate-300">
-          As you <b className="text-cyan-300">scroll inside this section</b>, the co-pilot scrubs a short route in
-          Bengaluru, recalls nearby hazards from memory, and <b className="text-emerald-300">speaks before</b> you reach them.
-          Scroll up to go back. Scrolling outside this section stops the demo.
-        </p>
-
-        {/* Start/Stop Copilot Button */}
-        <div className="mt-6 flex items-center gap-4">
-          {!copilotRunning ? (
-            <button
-              onClick={handleStartCopilot}
-              className="rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 px-6 py-3 font-semibold text-white shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 transition-all hover:scale-105"
-            >
-              Start Copilot
-            </button>
-          ) : (
-            <button
-              onClick={handleStopCopilot}
-              className="rounded-xl bg-gradient-to-r from-red-500 to-orange-500 px-6 py-3 font-semibold text-white shadow-lg shadow-red-500/25 hover:shadow-red-500/40 transition-all hover:scale-105"
-            >
-              Stop Copilot
-            </button>
-          )}
-        </div>
-
-        {/* Enhanced terminal-style console */}
-        <div className="mt-8 overflow-hidden rounded-2xl border border-white/10 bg-slate-900/80 shadow-2xl backdrop-blur-lg">
-          <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
-            <span className="text-sm font-medium text-slate-300">Copilot Console</span>
-            <div className="flex items-center gap-2">
-              <div className={`h-2 w-2 rounded-full ${active ? "bg-emerald-400 animate-pulse" : "bg-slate-500"}`} />
-              <span className={`text-xs font-medium ${active ? "text-emerald-400" : "text-slate-500"}`}>
-                {active ? "LIVE" : "IDLE"}
-              </span>
-            </div>
-          </div>
-          <div className="h-48 max-h-48 overflow-hidden px-4 py-3 font-mono text-[13px] leading-6 text-slate-200 flex flex-col justify-end bg-gradient-to-b from-slate-900/50 to-slate-900/80">
-            {log.length === 0 ? (
-              <div className="text-slate-500 italic">Waiting for scroll events…</div>
-            ) : (
-              log.slice(-24).map((l, i) => (
-                <div key={i} className="whitespace-pre">
-                  <span className="text-slate-400">{l.t}</span>{" "}
-                  <span
-                    className={
-                      `inline-block rounded-lg px-2 py-1 text-xs font-medium transition-all duration-200 ${
-                        l.tag === "RAG"
-                          ? "bg-emerald-500/20 text-emerald-300 ring-1 ring-emerald-500/30"
-                          : l.tag === "TTS"
-                          ? "bg-sky-500/20 text-sky-300 ring-1 ring-sky-500/30"
-                          : l.tag === "DB"
-                          ? "bg-purple-500/20 text-purple-300 ring-1 ring-purple-500/30"
-                          : l.tag === "V2X"
-                          ? "bg-amber-500/20 text-amber-300 ring-1 ring-amber-500/30"
-                          : "bg-fuchsia-500/20 text-fuchsia-300 ring-1 ring-fuchsia-500/30"
-                      }`
-                    }
-                  >
-                    {l.tag}
-                  </span>{" "}
-                  {l.text}
-                </div>
-              ))
-            )}
-          </div>
-        </div>
+      {/* Fine grid background pattern */}
+      <div className="pointer-events-none absolute inset-0 opacity-30">
+        <div className="h-full w-full bg-[linear-gradient(to_right,rgba(56,189,248,.06)_1px,transparent_1px),linear-gradient(to_bottom,rgba(56,189,248,.06)_1px,transparent_1px)] bg-[size:4px_4px]" />
       </div>
 
-      {/* Right map card */}
-      <div className="relative">
-        {/* Enhanced glow effects */}
-        <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-cyan-500/10 via-transparent to-purple-500/10 blur-2xl" />
-        <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-slate-800/50 to-slate-900/70 p-2 shadow-2xl backdrop-blur-lg">
-          <div className="h-[520px] w-full overflow-hidden rounded-xl">
-            <MapCanvas
-              pos={pos}
-              onPosChange={setPos}
-              hazards={hazards}
-              follow={true}
-              zoom={15}
-              // Remove hazardPulse prop since MapCanvas doesn't support it yet
-            />
-          </div>
-        </div>
-        
-        {/* Enhanced status indicator */}
-        <div className={`pointer-events-none absolute right-4 top-4 rounded-full px-4 py-2 text-sm font-medium backdrop-blur-lg transition-all duration-300 ${
-          active 
-            ? "bg-emerald-500/20 text-emerald-300 ring-2 ring-emerald-500/40 shadow-lg shadow-emerald-500/10" 
-            : "bg-slate-500/20 text-slate-400 ring-1 ring-slate-500/30"
-        }`}>
-          <div className="flex items-center gap-2">
-            <div className={`h-2 w-2 rounded-full ${active ? "bg-emerald-400 animate-pulse" : "bg-slate-400"}`} />
-            {active ? "Interactive • Scroll to drive" : "Scroll into view"}
+
+      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        {/* Main content card */}
+        <div className="border border-slate-700/60 bg-gradient-to-br from-slate-900/40 to-slate-950/40 p-12 backdrop-blur-sm">
+          {/* Gradient accent on hover */}
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-cyan-500/5 via-transparent to-blue-500/5 opacity-0 transition-opacity hover:opacity-100" />
+
+          <div className="relative">
+            {/* Eyebrow */}
+            <div className="mb-6">
+              <span className="inline-block text-sm font-semibold uppercase tracking-wider text-slate-400">
+                INTERACTIVE DEMO
+              </span>
+            </div>
+
+            {/* Main headline */}
+            <h2 className="text-5xl font-normal leading-tight tracking-tight text-white md:text-6xl lg:text-7xl">
+              Contextual{" "}
+              <span className="text-cyan-400">Awareness</span>
+            </h2>
+
+            {/* Description */}
+            <p className="mt-6 max-w-3xl text-lg leading-relaxed text-slate-400">
+              As you <span className="font-semibold text-cyan-400">scroll inside this section</span>, the co-pilot scrubs a short route in
+              Bengaluru, recalls nearby hazards from memory, and <span className="font-semibold text-emerald-400">speaks before</span> you reach them.
+              Scroll up to go back. Scrolling outside this section stops the demo.
+            </p>
+
+            {/* Start/Stop Copilot Button */}
+            <div className="mt-8 flex items-center gap-4">
+              {!copilotRunning ? (
+                <button
+                  onClick={handleStartCopilot}
+                  className="rounded-full bg-white px-8 py-3.5 text-base font-semibold text-slate-900 shadow-lg transition-all hover:bg-slate-100"
+                  style={{ fontFamily: 'system-ui, -apple-system, "Segoe UI", sans-serif' }}
+                >
+                  Start Copilot
+                </button>
+              ) : (
+                <button
+                  onClick={handleStopCopilot}
+                  className="rounded-full border border-slate-700 bg-slate-900/50 px-8 py-3.5 text-base font-semibold text-white transition-all hover:border-slate-600 hover:bg-slate-800/50"
+                  style={{ fontFamily: 'system-ui, -apple-system, "Segoe UI", sans-serif' }}
+                >
+                  Stop Copilot
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Hazard legend */}
-        <div className="pointer-events-none absolute left-4 bottom-4 rounded-xl bg-black/60 backdrop-blur-lg px-4 py-3 text-xs text-slate-300 ring-1 ring-white/10">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="h-3 w-3 rounded-full bg-red-500 animate-pulse" />
-            <span>Active Hazards</span>
+        {/* Grid connector between sections - full width */}
+        <div className="relative h-20 w-full overflow-hidden border-x border-slate-700/60 bg-[#0B1120]">
+          <div className="absolute inset-0 flex items-center justify-between">
+            {Array.from({ length: 100 }).map((_, i) => (
+              <div
+                key={i}
+                className="h-full w-px bg-slate-800/40"
+              />
+            ))}
           </div>
-          <div className="flex items-center gap-2 text-slate-400">
-            <div className="h-2 w-2 rounded-full bg-cyan-500" />
-            <span>Your Position</span>
+        </div>
+
+        {/* Demo cards grid: keep terminal and map side-by-side and visible */}
+        <div ref={demoCardsRef} className="-mt-4 grid gap-0 md:grid-cols-2">
+          {/* Left card - Terminal (sticky on desktop) */}
+          <div className="group relative overflow-hidden border border-slate-700/60 bg-gradient-to-br from-slate-900/40 to-slate-950/40 backdrop-blur-sm transition-all hover:border-slate-600/80 md:sticky md:top-20">
+            {/* Gradient accent on hover */}
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-transparent to-cyan-500/5 opacity-0 transition-opacity group-hover:opacity-100" />
+
+            <div className="relative">
+              {/* Developer-style terminal header */}
+              <div className="flex flex-wrap items-center gap-3 border-b border-slate-800/80 bg-slate-950/80 px-5 py-3">
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-1.5">
+                    <div className="h-3 w-3 rounded-full bg-red-500/80" />
+                    <div className="h-3 w-3 rounded-full bg-yellow-500/80" />
+                    <div className="h-3 w-3 rounded-full bg-green-500/80" />
+                  </div>
+                  <span className="text-xs font-medium text-slate-400" style={{ fontFamily: 'ui-monospace, "SF Mono", Consolas, monospace' }}>
+                    copilot@vigia:~$
+                  </span>
+                </div>
+                <div className="ml-auto flex flex-wrap items-center gap-3">
+                  <div className="flex items-center gap-2">
+                    <div className={`h-2 w-2 rounded-full ${active ? "bg-emerald-400 animate-pulse" : "bg-slate-500"}`} />
+                    <span className={`text-xs font-semibold uppercase tracking-wider ${active ? "text-emerald-400" : "text-slate-500"}`} style={{ fontFamily: 'ui-monospace, "SF Mono", Consolas, monospace' }}>
+                      {active ? "LIVE" : "IDLE"}
+                    </span>
+                  </div>
+                  {!copilotRunning ? (
+                    <button
+                      onClick={handleStartCopilot}
+                      className="rounded-full bg-emerald-500/90 px-4 py-1.5 text-xs font-semibold uppercase tracking-wide text-slate-950 transition hover:bg-emerald-400"
+                      style={{ fontFamily: 'system-ui, -apple-system, "Segoe UI", sans-serif' }}
+                    >
+                      Start
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleStopCopilot}
+                      className="rounded-full border border-rose-400/50 bg-rose-500/80 px-4 py-1.5 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-rose-400"
+                      style={{ fontFamily: 'system-ui, -apple-system, "Segoe UI", sans-serif' }}
+                    >
+                      Stop
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Terminal content */}
+              <div
+                className="h-[68vh] max-h-[720px] overflow-hidden bg-black/40 px-5 py-4 font-mono text-xs leading-6 text-slate-300"
+                style={{ fontFamily: 'ui-monospace, "SF Mono", Consolas, monospace' }}
+              >
+                <div className="flex h-full flex-col justify-end">
+                  {log.length === 0 ? (
+                    <div className="text-slate-600 italic">Waiting for scroll events…</div>
+                  ) : (
+                    log.slice(-24).map((l, i) => (
+                      <div key={i} className="mb-1">
+                        <span className="text-slate-600">[{l.t}]</span>{" "}
+                        <span
+                          className={`inline-block rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${l.tag === "RAG"
+                            ? "bg-emerald-500/20 text-emerald-400"
+                            : l.tag === "TTS"
+                              ? "bg-cyan-500/20 text-cyan-400"
+                              : l.tag === "DB"
+                                ? "bg-purple-500/20 text-purple-400"
+                                : l.tag === "V2X"
+                                  ? "bg-amber-500/20 text-amber-400"
+                                  : "bg-pink-500/20 text-pink-400"
+                            }`}
+                        >
+                          {l.tag}
+                        </span>{" "}
+                        <span className="text-slate-400">{l.text}</span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right card - Map (sticky on desktop) */}
+          <div className="group relative overflow-hidden border border-slate-700/60 bg-gradient-to-br from-slate-900/40 to-slate-950/40 backdrop-blur-sm transition-all hover:border-slate-600/80 md:sticky md:top-20">
+            {/* Gradient accent on hover */}
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-cyan-500/5 via-transparent to-blue-500/5 opacity-0 transition-opacity group-hover:opacity-100" />
+
+            <div className="relative p-3">
+              <div className="overflow-hidden rounded-xl border border-slate-800 bg-black shadow-2xl">
+                <div className="h-[68vh] max-h-[720px] w-full">
+                  <MapCanvas
+                    pos={pos}
+                    onPosChange={setPos}
+                    hazards={hazards}
+                    follow={true}
+                    zoom={15}
+                  />
+                </div>
+              </div>
+
+              {/* Enhanced status indicator */}
+              <div className={`pointer-events-none absolute right-6 top-6 rounded-full px-4 py-2 text-sm font-medium backdrop-blur-lg transition-all duration-300 ${active
+                ? "bg-emerald-500/20 text-emerald-300 ring-2 ring-emerald-500/40 shadow-lg shadow-emerald-500/10"
+                : "bg-slate-500/20 text-slate-400 ring-1 ring-slate-500/30"
+                }`}>
+                <div className="flex items-center gap-2">
+                  <div className={`h-2 w-2 rounded-full ${active ? "bg-emerald-400 animate-pulse" : "bg-slate-400"}`} />
+                  {active ? "Interactive • Scroll to drive" : "Scroll into view"}
+                </div>
+              </div>
+
+              {/* Hazard legend */}
+              <div className="pointer-events-none absolute left-6 bottom-6 rounded-xl bg-black/80 backdrop-blur-lg px-4 py-3 text-xs text-slate-300 ring-1 ring-slate-700">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="h-3 w-3 rounded-full bg-red-500 animate-pulse" />
+                  <span>Active Hazards</span>
+                </div>
+                <div className="flex items-center gap-2 text-slate-400">
+                  <div className="h-2 w-2 rounded-full bg-cyan-500" />
+                  <span>Your Position</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

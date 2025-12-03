@@ -1,6 +1,7 @@
 import BackgroundFX from "@/components/BackgroundFX";
 import TopBar from "@/components/TopBar";
 import SonicHero from "@/components/SonicHero";
+import SectionConnector from "@/components/SectionConnector";
 import SonicDemo from "@/components/SonicDemo";
 
 import CodeDemo from "@/components/CodeDemo";
@@ -17,19 +18,21 @@ export default function Home() {
       <div className="absolute inset-0 bg-grid" />
       <BackgroundFX />
       <TopBar />
-
       <div className="pt-20">
         <SonicHero />
       </div>
-
+      
+      
       <SonicDemo />
-
+      
       {/* Argus demo (client-only via the wrapper) */}
       <VGTShowcaseSection />
-      <MapSection/>
-      <DeveloperSection />
-      <BenchmarkDemo />
 
+      <MapSection />
+
+      <DeveloperSection />
+
+      <BenchmarkDemo />
       <SiteFooter />
     </main>
   );

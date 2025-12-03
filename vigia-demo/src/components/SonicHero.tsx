@@ -7,27 +7,27 @@ import { useRef } from "react";
 /* ---------- Motion helpers ---------- */
 const fadeUp = (delay = 0) => ({
   initial: { opacity: 0, y: 14, filter: "blur(2px)" },
-  animate: { 
-    opacity: 1, 
-    y: 0, 
-    filter: "blur(0px)", 
-    transition: { 
-      duration: 0.6, 
-      ease: "easeOut" as const, 
-      delay 
-    } 
+  animate: {
+    opacity: 1,
+    y: 0,
+    filter: "blur(0px)",
+    transition: {
+      duration: 0.6,
+      ease: "easeOut" as const,
+      delay
+    }
   },
 });
 
 const springTap = {
-  whileHover: { 
-    y: -2, 
-    scale: 1.015, 
-    transition: { 
-      type: "spring" as const, 
-      stiffness: 400, 
-      damping: 25 
-    } 
+  whileHover: {
+    y: -2,
+    scale: 1.015,
+    transition: {
+      type: "spring" as const,
+      stiffness: 400,
+      damping: 25
+    }
   },
   whileTap: { scale: 0.985, y: 0 },
 };
@@ -60,108 +60,177 @@ export default function SonicHero() {
   return (
     <section
       ref={containerRef}
-      className="relative overflow-hidden bg-gradient-to-b from-slate-950 via-slate-950 to-slate-900"
+      className="relative min-h-screen overflow-hidden bg-[#0B1120]"
     >
-      {/* subtle grid */}
-      <div className="pointer-events-none absolute inset-0 opacity-[.28] [mask-image:radial-gradient(60%_60%_at_50%_40%,#000_60%,transparent_100%)]">
-        <div className="h-full w-full bg-[linear-gradient(to_right,rgba(148,163,184,.15)_1px,transparent_1px),linear-gradient(to_bottom,rgba(148,163,184,.12)_1px,transparent_1px)] bg-[size:28px_28px]" />
+      {/* Fine grid background pattern */}
+      <div className="pointer-events-none absolute inset-0 opacity-30">
+        <div className="h-full w-full bg-[linear-gradient(to_right,rgba(56,189,248,.06)_1px,transparent_1px),linear-gradient(to_bottom,rgba(56,189,248,.06)_1px,transparent_1px)] bg-[size:4px_4px]" />
       </div>
 
-      <div className="mx-auto grid max-w-7xl gap-12 px-4 py-20 md:grid-cols-2">
-        <div>
-          {/* Title with animated gradient shimmer */}
-          <motion.h1
-            {...fadeUp(0)}
-            className="text-4xl font-semibold tracking-tight text-white md:text-6xl"
+
+      <div className="relative mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-8">
+        {/* Main content card */}
+        <motion.div
+          {...fadeUp(0)}
+          className="border border-slate-700/60 bg-gradient-to-br from-slate-900/40 to-slate-950/40 p-12 backdrop-blur-sm"
+        >
+          {/* Eyebrow */}
+          <div className="mb-6">
+            <span className="inline-block text-sm font-semibold uppercase tracking-wider text-slate-400">
+              MEET VIGIA{" "}
+              <span className="text-emerald-400">FOR ROAD SAFETY</span>
+            </span>
+          </div>
+
+          {/* Main headline */}
+          <h1
+            className="text-5xl font-normal leading-tight tracking-tight text-white md:text-7xl lg:text-8xl"
+            style={{ fontFamily: 'system-ui, -apple-system, "Segoe UI", sans-serif' }}
           >
             Real-time Road Intelligence{" "}
-            <span className="relative inline-block">
-              <span className="bg-gradient-to-r from-cyan-400 via-emerald-300 to-fuchsia-400 bg-clip-text text-transparent">
-                on the edge
-              </span>
-              <motion.span
-                aria-hidden
-                initial={{ x: "-120%" }}
-                animate={{ x: ["-120%", "120%"] }}
-                transition={{ 
-                  duration: 2.2, 
-                  repeat: Infinity, 
-                  ease: "easeInOut" as const 
-                }}
-                className="pointer-events-none absolute -inset-y-1 -inset-x-1 block bg-gradient-to-r from-transparent via-white/30 to-transparent [mask-image:linear-gradient(90deg,transparent,black,transparent)]"
-              />
+            <span className="block md:inline">
+              on the edge
             </span>
-            .
-          </motion.h1>
+          </h1>
 
-          <motion.p
-            {...fadeUp(0.12)}
-            className="mt-4 text-lg text-white/70"
+          {/* Subtitle */}
+          <p
+            className="mt-6 max-w-2xl text-lg leading-relaxed text-slate-400 md:text-xl"
+            style={{ fontFamily: 'system-ui, -apple-system, "Segoe UI", sans-serif' }}
           >
             Low-latency audio understanding, hazard memory, and a generative co-pilot that speaks before trouble.
-          </motion.p>
+          </p>
 
-          {/* CTAs: real navigation + watch demo */}
-          <motion.div {...fadeUp(0.2)}>
-            <div className="mt-8 flex flex-wrap items-center gap-3">
-              <motion.button
-                {...springTap}
-                type="button"
-                onClick={scrollToCopilot}
-                className="cta-uniform rounded-lg bg-white px-4 py-2.5 font-medium text-slate-900 shadow hover:bg-white/90 focus:outline-none focus:ring-2 focus:ring-white/50"
+          {/* CTAs */}
+          <div className="mt-10 flex flex-wrap items-center gap-4">
+            <motion.button
+              {...springTap}
+              type="button"
+              onClick={scrollToCopilot}
+              className="rounded-full bg-white px-8 py-3.5 text-base font-semibold text-slate-900 shadow-lg transition-all hover:bg-slate-100"
+              style={{ fontFamily: 'system-ui, -apple-system, "Segoe UI", sans-serif' }}
+            >
+              Try for free
+            </motion.button>
+
+            <motion.div {...springTap}>
+              <Link
+                href="/docs"
+                className="inline-block rounded-full border border-slate-700 bg-slate-900/50 px-8 py-3.5 text-base font-semibold text-white transition-all hover:border-slate-600 hover:bg-slate-800/50"
+                style={{ fontFamily: 'system-ui, -apple-system, "Segoe UI", sans-serif' }}
               >
-                Try the Copilot
-              </motion.button>
+                Contact Sales
+              </Link>
+            </motion.div>
+          </div>
+        </motion.div>
 
-              <motion.div {...springTap}>
-                <Link
-                  href="/docs"
-                  className="cta-uniform rounded-lg border border-white/20 px-4 py-2.5 text-white/90 hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-white/20"
-                >
-                  Read the docs
-                </Link>
-              </motion.div>
-
-              <motion.button
-                {...springTap}
-                onClick={scrollToBenchmark}
-                className="cta-uniform inline-flex items-center gap-2 rounded-lg border border-emerald-400/30 bg-emerald-400/10 px-4 py-2.5 text-emerald-200 hover:bg-emerald-400/15 focus:outline-none focus:ring-2 focus:ring-emerald-400/30"
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="-ml-0.5">
-                  <path d="M3 3v18h18" />
-                  <path d="m19 9-5 5-4-4-3 3" />
-                </svg>
-                Benchmark
-              </motion.button>
-            </div>
-          </motion.div>
+        {/* Grid connector between sections - full width */}
+        <div className="relative h-20 w-full overflow-hidden border-x border-slate-700/60 bg-[#0B1120]">
+          <div className="absolute inset-0 flex items-center justify-between">
+            {Array.from({ length: 100 }).map((_, i) => (
+              <div
+                key={i}
+                className="h-full w-px bg-slate-800/40"
+              />
+            ))}
+          </div>
         </div>
 
-        {/* Right: glossy video embed with parallax float */}
+        {/* Demo card - Rectangular layout */}
         <motion.div
           style={{ y: floatY }}
-          initial={{ opacity: 0, y: 10 }}
+          initial={{ opacity: 0, y: 0 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15, duration: 0.6, ease: "easeOut" as const }}
           ref={previewRef}
-          className="relative rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-md shadow-[0_10px_40px_-15px_rgba(0,0,0,.6)]"
+          className="-mt-4 group relative overflow-hidden border border-slate-700/60 backdrop-blur-sm transition-all hover:border-slate-600/80"
         >
-          <div className="mb-3 text-sm text-white/80">Copilot walkthrough</div>
+          <div className="grid md:grid-cols-2">
+            {/* Left side - Real-time Road Intelligence */}
+            <div className="relative overflow-hidden bg-gradient-to-br from-slate-900/40 to-slate-950/40 p-12">
 
-          <div className="relative aspect-video w-full overflow-hidden rounded-xl border border-white/10 shadow-inner">
-            <iframe
-              title="Sonic Copilot demo walkthrough"
-              src={YOUTUBE_EMBED_SRC}
-              className="absolute inset-0 h-full w-full"
-              loading="lazy"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-              allowFullScreen
-            />
+              <div className="relative">
+                <h3 className="mb-2 text-sm font-semibold uppercase tracking-wider text-slate-400">
+                  Real-time Road Intelligence
+                </h3>
+
+                <h2 className="mt-6 text-4xl font-bold leading-tight text-white md:text-5xl">
+                  Edge-powered safety for every journey
+                </h2>
+
+                <p className="mt-6 text-lg leading-relaxed text-slate-400">
+                  Low-latency audio understanding, hazard memory, and a generative co-pilot that speaks before trouble.
+                </p>
+
+                <div className="mt-10 space-y-4">
+                  <div className="flex items-start gap-3">
+                    <div className="mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/20">
+                      <svg className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-white">Context-aware Detection</p>
+                      <p className="text-sm text-slate-400">98% accuracy in real-world conditions</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3">
+                    <div className="mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/20">
+                      <svg className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-white">Ultra-low Latency</p>
+                      <p className="text-sm text-slate-400">&lt;50ms edge-native processing</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3">
+                    <div className="mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/20">
+                      <svg className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-white">Multilingual Support</p>
+                      <p className="text-sm text-slate-400">Natural, emotive speech in any language</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right side - Video */}
+            <div className="relative overflow-hidden bg-gradient-to-br from-slate-900/40 to-slate-950/40 p-8">
+              <div className="relative">
+                <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-slate-400">
+                  Copilot Walkthrough
+                </h3>
+
+                <div className="group/video relative overflow-hidden rounded-lg border border-slate-700/60 bg-slate-950 shadow-2xl">
+                  <div className="relative aspect-video w-full">
+                    <iframe
+                      title="Sonic Copilot demo walkthrough"
+                      src={YOUTUBE_EMBED_SRC}
+                      className="absolute inset-0 h-full w-full"
+                      loading="lazy"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      allowFullScreen
+                    />
+                    {/* Modern video overlay effect */}
+                    <div className="pointer-events-none absolute inset-0 rounded-lg ring-1 ring-inset ring-white/5 transition-opacity group-hover/video:opacity-0" />
+                  </div>
+                </div>
+
+                <p className="mt-4 text-sm leading-relaxed text-slate-400">
+                  Watch how we layer sonic cues, hazard memory, and proactive co-pilot prompts into a single ride-along experience.
+                </p>
+              </div>
+            </div>
           </div>
-
-          <p className="mt-4 text-sm text-white/70">
-            Watch how we layer sonic cues, hazard memory, and proactive co-pilot prompts into a single ride-along experience.
-          </p>
         </motion.div>
       </div>
     </section>

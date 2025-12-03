@@ -6,32 +6,59 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useProfile } from "@/hooks/useProfile";
 
 type NavLink = { href: string; label: string; description?: string };
+type DropdownItem = { href: string; label: string; description: string; external?: boolean };
 
 const LINKS: NavLink[] = [
   {
-    href: "/",
-    label: "Home",
-    description: "Preview the platform, stack, and latest releases",
-  },
-  {
-    href: "/sandbox",
-    label: "Sandbox",
-    description: "Try live demos, models, and workflows in-browser",
-  },
-  {
-    href: "/dashboard",
-    label: "Dashboard",
-    description: "Monitor deployments, moderation, and alerts",
-  },
-  {
     href: "/pricing",
-    label: "Pricing",
-    description: "Compare plans and enterprise support options",
+    label: "PRICING",
   },
   {
     href: "/docs",
-    label: "Docs",
-    description: "API references, guides, and developer resources",
+    label: "DOCS",
+  },
+];
+
+const SANDBOX_ITEMS: DropdownItem[] = [
+  {
+    href: "/sandbox/aegis",
+    label: "AEGIS",
+    description: "Privacy-first perception (blur faces & plates)",
+  },
+  {
+    href: "/sandbox/v2x",
+    label: "V2X DEMO",
+    description: "Vehicle ↔ Vehicle alerts over WS/MQTT",
+  },
+  {
+    href: "/sandbox/sensor",
+    label: "SENSOR FUSION",
+    description: "Multimodal (acoustic + accelerometer)",
+  },
+  {
+    href: "/sandbox/dbscan",
+    label: "DBSCAN CLUSTERING",
+    description: "Cluster & deduplicate reports",
+  },
+  {
+    href: "/sandbox/forecast",
+    label: "PREDICTIVE FORECAST",
+    description: "Hazard density projections",
+  },
+  {
+    href: "/sandbox/copilot",
+    label: "CO-PILOT (GEO-RAG)",
+    description: "Generative guidance from geospatial context",
+  },
+  {
+    href: "/sandbox/argus_web",
+    label: "ARGUS WEB (ONNX)",
+    description: "Browser ONNX/WebGPU speed (FPS) demo",
+  },
+  {
+    href: "/sandbox/on_device",
+    label: "ON-DEVICE FINE TUNING",
+    description: "Federated hazard resolution",
   },
 ];
 
@@ -41,7 +68,9 @@ export default function TopBar() {
   const { profile, loading } = useProfile();
 
   const [open, setOpen] = useState(false);
+  const [resourcesOpen, setResourcesOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement | null>(null);
+  const resourcesRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => setOpen(false), [pathname]);
 
@@ -50,12 +79,25 @@ export default function TopBar() {
       if (!open) return;
       if (panelRef.current && !panelRef.current.contains(e.target as Node)) setOpen(false);
     }
+    function onResourcesClick(e: MouseEvent) {
+      if (!resourcesOpen) return;
+      if (resourcesRef.current && !resourcesRef.current.contains(e.target as Node)) setResourcesOpen(false);
+    }
     document.addEventListener("mousedown", onDocClick);
-    return () => document.removeEventListener("mousedown", onDocClick);
-  }, [open]);
+    document.addEventListener("mousedown", onResourcesClick);
+    return () => {
+      document.removeEventListener("mousedown", onDocClick);
+      document.removeEventListener("mousedown", onResourcesClick);
+    };
+  }, [open, resourcesOpen]);
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setOpen(false);
+        setResourcesOpen(false);
+      }
+    };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, []);
@@ -85,149 +127,157 @@ export default function TopBar() {
     r.push("/dashboard");
   }, [r, pathname, profile, loading]);
 
-  const NavLinks = ({
-    className = "",
-    onNavigate,
-    orientation = "horizontal",
-  }: {
-    className?: string;
-    onNavigate?: () => void;
-    orientation?: "horizontal" | "vertical";
-  }) => (
-    <div className={className}>
-      {LINKS.map(({ href, label, description }) => {
-        const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
-
-        if (orientation === "vertical") {
-          return (
-            <Link
-              key={href}
-              href={href}
-              onClick={onNavigate}
-              className={`group block rounded-2xl border px-4 py-3 transition-all duration-200 ${
-                active
-                  ? "border-cyan-400/60 bg-cyan-500/10 shadow-[0_12px_40px_rgba(56,189,248,0.15)]"
-                  : "border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10"
-              }`}
-            >
-              <div className="flex items-center justify-between gap-2">
-                <span
-                  className={`text-base font-semibold tracking-wide transition-colors ${
-                    active ? "text-white" : "text-white/85 group-hover:text-white"
-                  }`}
-                >
-                  {label}
-                </span>
-                <span
-                  aria-hidden
-                  className={`text-sm transition-transform duration-200 ${
-                    active ? "translate-x-0 text-cyan-300" : "text-white/60 group-hover:translate-x-1"
-                  }`}
-                >
-                  →
-                </span>
-              </div>
-              {description && <p className="mt-1 text-sm text-white/70">{description}</p>}
-            </Link>
-          );
-        }
-
-        return (
-          <Link
-            key={href}
-            href={href}
-            onClick={onNavigate}
-            className="group relative block py-2 text-base font-medium transition-all md:text-lg"
-          >
-            <span
-              className={`transition-colors duration-300 ${
-                active
-                  ? "text-white drop-shadow-[0_0_8px_rgba(56,189,248,0.3)]"
-                  : "text-slate-300 group-hover:text-white"
-              }`}
-            >
-              {label}
-            </span>
-            <span
-              className={`absolute bottom-0 left-0 h-0.5 bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 transition-all duration-300 ease-out ${
-                active ? "w-full" : "w-0 group-hover:w-full"
-              }`}
-            />
-          </Link>
-        );
-      })}
-    </div>
-  );
-
   return (
     <header className="fixed inset-x-0 top-0 z-[9999] pointer-events-auto">
-      {/* Updated banner to match sonic hero style */}
+      {/* Banner */}
       <Link
         href="/sandbox"
-        className="group block w-full text-center text-sm md:text-base text-white/90 py-2.5 border-b border-slate-700/40 backdrop-blur-sm"
-        style={{
-          background: bannerBackground,
-          backgroundSize: bannerBgSize,
-          backgroundPosition: "0 0, 0 0",
-        }}
+        className="group block w-full text-center text-sm text-white/90 py-2.5 border-b border-slate-800/60 bg-[#0B1120]"
+        style={{ fontFamily: 'system-ui, -apple-system, "Segoe UI", sans-serif' }}
       >
-        <span className="font-medium bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
+        <span className="font-medium">
           Check out our{" "}
-          <span className="underline underline-offset-2 decoration-cyan-400/60">Sandbox</span> to explore our features
+          <span className="text-cyan-400">Sandbox</span> to explore our features
         </span>
         <span
           aria-hidden
-          className="inline-flex items-center ml-1 transition-all duration-300 group-hover:translate-x-1 group-hover:text-cyan-300"
+          className="inline-flex items-center ml-1 transition-all duration-300 group-hover:translate-x-1"
         >
           →
         </span>
       </Link>
 
-      {/* Main navigation bar - updated to match sonic hero */}
-      <div className="relative w-full border-b border-white/10 bg-slate-950/95 backdrop-blur-xl supports-[backdrop-filter]:bg-slate-950/80">
+      {/* Main navigation bar */}
+      <div className="relative w-full border-b border-slate-800/60 bg-[#0B1120]">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <nav aria-label="Primary" className="h-16 md:h-[72px] flex items-center justify-between">
-            {/* Brand without logo - simplified */}
+          <nav aria-label="Primary" className="h-16 flex items-center justify-between" style={{ fontFamily: 'system-ui, -apple-system, "Segoe UI", sans-serif' }}>
+            {/* Brand */}
             <Link href="/" className="group flex items-center gap-2">
-              <span className="relative text-2xl md:text-[28px] font-semibold tracking-wide 
-                             bg-gradient-to-r from-cyan-400 via-emerald-300 to-fuchsia-400 
-                             bg-clip-text text-transparent
-                             drop-shadow-[0_2px_12px_rgba(56,189,248,0.3)]
-                             overflow-hidden">
+              <span className="text-xl md:text-2xl font-bold tracking-tight text-white">
                 VIGIA
-                <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent 
-                               translate-x-[-200%] group-hover:translate-x-[200%] 
-                               transition-transform duration-1000 ease-in-out
-                               [mask-image:linear-gradient(90deg,transparent,white,transparent)]" />
               </span>
             </Link>
 
             {/* Desktop nav + actions */}
             <div className="hidden md:flex items-center gap-6">
-              <NavLinks className="flex items-center gap-8" />
-              <div className="flex items-center gap-4">
-                <Link
-                  href="/auth/signin"
-                  className="rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-white/90 
-                           hover:bg-white/10 hover:border-white/25 transition-all duration-200
-                           hover:-translate-y-0.5 active:translate-y-0"
-                >
-                  Sign in
-                </Link>
+              {/* Resources dropdown */}
+              <div className="relative" ref={resourcesRef}>
                 <button
-                  onClick={handleStart}
-                  className="rounded-xl bg-white text-slate-900 px-5 py-2 font-semibold
-                           shadow-[0_4px_16px_rgba(255,255,255,0.1)]
-                           transition-all duration-200
-                           hover:shadow-[0_6px_22px_rgba(255,255,255,0.15)]
-                           hover:-translate-y-0.5 active:translate-y-0 active:shadow-none
-                           whitespace-nowrap disabled:opacity-50"
-                  disabled={loading}
-                  aria-label="Start"
+                  onClick={() => setResourcesOpen(!resourcesOpen)}
+                  className="flex items-center gap-1.5 text-sm font-medium text-slate-300 hover:text-white transition-colors uppercase tracking-wide"
+                  style={{ fontFamily: 'ui-monospace, "SF Mono", Consolas, monospace' }}
                 >
-                  {loading ? "Loading..." : "Get Started"}
+                  RESOURCES
+                  <svg
+                    className={`w-4 h-4 transition-transform ${resourcesOpen ? "rotate-180" : ""}`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
                 </button>
+
+                {/* Resources dropdown menu */}
+                {resourcesOpen && (
+                  <div className="absolute top-full right-0 mt-2 w-[480px] rounded-lg border border-slate-800 bg-[#0B1120] shadow-2xl overflow-hidden">
+                    <div className="grid grid-cols-2 divide-x divide-slate-800">
+                      <div className="p-6 space-y-4">
+                        <Link
+                          href="/sandbox"
+                          onClick={() => setResourcesOpen(false)}
+                          className="block group"
+                        >
+                          <div className="text-sm font-bold text-white uppercase tracking-wide" style={{ fontFamily: 'ui-monospace, "SF Mono", Consolas, monospace' }}>
+                            SANDBOX
+                          </div>
+                          <div className="mt-1 text-sm text-slate-400">
+                            Try live demos and simulations
+                          </div>
+                        </Link>
+                        {SANDBOX_ITEMS.slice(0, 4).map((item) => (
+                          <Link
+                            key={item.href}
+                            href={item.href}
+                            onClick={() => setResourcesOpen(false)}
+                            className="block group"
+                          >
+                            <div className="text-xs font-bold text-white uppercase tracking-wide group-hover:text-cyan-400 transition-colors" style={{ fontFamily: 'ui-monospace, "SF Mono", Consolas, monospace' }}>
+                              {item.label}
+                            </div>
+                            <div className="mt-0.5 text-xs text-slate-400">
+                              {item.description}
+                            </div>
+                          </Link>
+                        ))}
+                      </div>
+                      <div className="p-6 space-y-4">
+                        {SANDBOX_ITEMS.slice(4).map((item) => (
+                          <Link
+                            key={item.href}
+                            href={item.href}
+                            onClick={() => setResourcesOpen(false)}
+                            className="block group"
+                          >
+                            <div className="text-xs font-bold text-white uppercase tracking-wide group-hover:text-cyan-400 transition-colors" style={{ fontFamily: 'ui-monospace, "SF Mono", Consolas, monospace' }}>
+                              {item.label}
+                            </div>
+                            <div className="mt-0.5 text-xs text-slate-400">
+                              {item.description}
+                            </div>
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
+
+              {/* Regular nav links */}
+              {LINKS.map(({ href, label }) => {
+                const active = pathname.startsWith(href);
+                return (
+                  <Link
+                    key={href}
+                    href={href}
+                    className={`text-sm font-medium uppercase tracking-wide transition-colors ${
+                      active ? "text-white" : "text-slate-300 hover:text-white"
+                    }`}
+                    style={{ fontFamily: 'ui-monospace, "SF Mono", Consolas, monospace' }}
+                  >
+                    {label}
+                  </Link>
+                );
+              })}
+
+              <Link
+                href="/careers"
+                className="text-sm font-medium text-slate-300 hover:text-white transition-colors uppercase tracking-wide"
+                style={{ fontFamily: 'ui-monospace, "SF Mono", Consolas, monospace' }}
+              >
+                CAREERS
+              </Link>
+
+              <Link
+                href="/enterprise"
+                className="text-sm font-medium text-slate-300 hover:text-white transition-colors uppercase tracking-wide"
+                style={{ fontFamily: 'ui-monospace, "SF Mono", Consolas, monospace' }}
+              >
+                ENTERPRISE
+              </Link>
+
+              <button
+                onClick={handleStart}
+                className="ml-auto rounded-full bg-emerald-500 text-white px-5 py-2 text-xs font-bold uppercase tracking-wider
+                         transition-all duration-200
+                         hover:bg-emerald-600
+                         disabled:opacity-50"
+                disabled={loading}
+                aria-label="Start"
+                style={{ fontFamily: 'ui-monospace, "SF Mono", Consolas, monospace' }}
+              >
+                {loading ? "Loading..." : "OPEN DASHBOARD"}
+              </button>
             </div>
 
             {/* Mobile hamburger */}
@@ -236,10 +286,9 @@ export default function TopBar() {
                 aria-label="Open menu"
                 aria-expanded={open}
                 onClick={() => setOpen((v) => !v)}
-                className="inline-flex items-center justify-center rounded-xl 
-                         border border-white/15 bg-white/5 px-3 py-2 
-                         text-white/90 hover:bg-white/10 transition-all duration-200
-                         hover:-translate-y-0.5 active:translate-y-0"
+                className="inline-flex items-center justify-center rounded-lg
+                         px-3 py-2 
+                         text-white/90 hover:bg-white/10 transition-colors"
               >
                 <span className="sr-only">Menu</span>
                 <div className="relative h-4 w-5">
@@ -273,7 +322,8 @@ export default function TopBar() {
           <div className="px-4 pb-5">
             <div
               ref={panelRef}
-              className="rounded-2xl border border-white/15 bg-slate-900/95 p-5 shadow-2xl backdrop-blur-xl max-h-[calc(100vh-6rem)] overflow-y-auto"
+              className="rounded-2xl border border-slate-800 bg-[#0B1120] p-5 shadow-2xl max-h-[calc(100vh-6rem)] overflow-y-auto"
+              style={{ fontFamily: 'system-ui, -apple-system, "Segoe UI", sans-serif' }}
             >
               <div className="mb-5 rounded-xl border border-cyan-400/30 bg-gradient-to-br from-cyan-500/10 via-blue-500/5 to-indigo-500/10 p-4 text-white/90">
                 <p className="text-sm font-semibold">Ship faster on mobile</p>
@@ -281,15 +331,69 @@ export default function TopBar() {
                   Access dashboards, deploy demos, and blur data right from your phone.
                 </p>
               </div>
-              <NavLinks
-                className="grid gap-3"
-                orientation="vertical"
-                onNavigate={() => setOpen(false)}
-              />
+
+              {/* Mobile navigation links */}
+              <div className="grid gap-3">
+                <Link
+                  href="/sandbox"
+                  onClick={() => setOpen(false)}
+                  className="group block rounded-2xl border border-white/10 bg-white/5 px-4 py-3 hover:border-white/20 hover:bg-white/10 transition-all"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-base font-semibold tracking-wide text-white/85 group-hover:text-white">
+                      Sandbox
+                    </span>
+                    <span className="text-sm text-white/60 group-hover:translate-x-1 transition-transform">→</span>
+                  </div>
+                  <p className="mt-1 text-sm text-white/70">Try live demos and simulations</p>
+                </Link>
+
+                {LINKS.map(({ href, label }) => (
+                  <Link
+                    key={href}
+                    href={href}
+                    onClick={() => setOpen(false)}
+                    className="group block rounded-2xl border border-white/10 bg-white/5 px-4 py-3 hover:border-white/20 hover:bg-white/10 transition-all"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-base font-semibold tracking-wide text-white/85 group-hover:text-white">
+                        {label}
+                      </span>
+                      <span className="text-sm text-white/60 group-hover:translate-x-1 transition-transform">→</span>
+                    </div>
+                  </Link>
+                ))}
+
+                <Link
+                  href="/careers"
+                  onClick={() => setOpen(false)}
+                  className="group block rounded-2xl border border-white/10 bg-white/5 px-4 py-3 hover:border-white/20 hover:bg-white/10 transition-all"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-base font-semibold tracking-wide text-white/85 group-hover:text-white">
+                      Careers
+                    </span>
+                    <span className="text-sm text-white/60 group-hover:translate-x-1 transition-transform">→</span>
+                  </div>
+                </Link>
+
+                <Link
+                  href="/enterprise"
+                  onClick={() => setOpen(false)}
+                  className="group block rounded-2xl border border-white/10 bg-white/5 px-4 py-3 hover:border-white/20 hover:bg-white/10 transition-all"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-base font-semibold tracking-wide text-white/85 group-hover:text-white">
+                      Enterprise
+                    </span>
+                    <span className="text-sm text-white/60 group-hover:translate-x-1 transition-transform">→</span>
+                  </div>
+                </Link>
+              </div>
               <div className="mt-6 grid grid-cols-2 gap-3">
                 <Link
                   href="/auth/signin"
-                  className="rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-center text-white/90 transition-all duration-200 hover:-translate-y-0.5 hover:bg-white/10 active:translate-y-0"
+                  className="rounded-lg border border-slate-700 bg-slate-800 px-4 py-3 text-center text-white/90 transition-colors hover:bg-slate-700"
                   onClick={() => setOpen(false)}
                 >
                   Sign in
@@ -299,10 +403,10 @@ export default function TopBar() {
                     setOpen(false);
                     handleStart();
                   }}
-                  className="rounded-xl bg-white px-4 py-3 text-center font-semibold text-slate-900 shadow-[0_8px_24px_rgba(255,255,255,0.18)] transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50"
+                  className="rounded-full bg-emerald-500 px-4 py-3 text-center text-sm font-semibold text-white transition-colors hover:bg-emerald-600 disabled:opacity-50"
                   disabled={loading}
                 >
-                  {loading ? "Loading..." : "Get Started"}
+                  {loading ? "Loading..." : "OPEN DASHBOARD"}
                 </button>
               </div>
               <div className="mt-4 rounded-lg border border-white/10 bg-white/5 p-3 text-xs text-white/70">
