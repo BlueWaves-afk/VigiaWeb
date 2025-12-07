@@ -37,49 +37,49 @@ function StatCard({
   return (
     <motion.div
       {...fadeUp(delay)}
-      className="group border border-slate-800/60 bg-slate-950/60 p-6 backdrop-blur-sm transition-all hover:border-slate-700/60"
+      className="group border border-slate-800/60 bg-slate-950/60 p-6 backdrop-blur-sm transition-all hover:border-slate-700/60 light:border-slate-200 light:bg-white light:hover:border-slate-300"
     >
       <div className="mb-4 flex items-center gap-3">
         <div className="flex h-10 w-10 items-center justify-center rounded-full">
           {icon}
         </div>
-        <h4 className="text-base font-semibold text-white">{title}</h4>
+        <h4 className="text-base font-semibold text-white light:text-slate-900">{title}</h4>
       </div>
-      <div className="text-sm leading-relaxed text-slate-400">{children}</div>
+      <div className="text-sm leading-relaxed text-slate-400 light:text-slate-600">{children}</div>
     </motion.div>
   );
 }
 
 export default function VgtTokenHero() {
   return (
-    <section className="relative min-h-screen overflow-hidden bg-[#0B1120]">
+    <section className="relative min-h-screen overflow-hidden bg-[#0B1120] light:bg-white">
       {/* Fine grid background pattern */}
-      <div className="pointer-events-none absolute inset-0 opacity-30">
-        <div className="h-full w-full bg-[linear-gradient(to_right,rgba(56,189,248,.06)_1px,transparent_1px),linear-gradient(to_bottom,rgba(56,189,248,.06)_1px,transparent_1px)] bg-[size:4px_4px]" />
+      <div className="pointer-events-none absolute inset-0 opacity-30 light:opacity-20">
+        <div className="h-full w-full bg-[linear-gradient(to_right,rgba(56,189,248,.06)_1px,transparent_1px),linear-gradient(to_bottom,rgba(56,189,248,.06)_1px,transparent_1px)] bg-[size:4px_4px] light:bg-[linear-gradient(to_right,rgba(14,165,233,.08)_1px,transparent_1px),linear-gradient(to_bottom,rgba(14,165,233,.08)_1px,transparent_1px)]" />
       </div>
 
       <div className="relative mx-auto max-w-7xl px-4 pb-24 sm:px-6 lg:px-8">
         {/* Main intro card */}
-        <div className="border border-slate-700/60 bg-gradient-to-br from-slate-900/40 to-slate-950/40 p-12 backdrop-blur-sm">
+        <div className="border border-slate-700/60 bg-gradient-to-br from-slate-900/40 to-slate-950/40 p-12 backdrop-blur-sm light:border-slate-200 light:from-white/40 light:to-slate-50/40">
           {/* LEFT: copy + actions */}
           <div>
             <motion.div {...fadeUp(0)}>
-              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 backdrop-blur-lg">
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 backdrop-blur-lg light:border-slate-200 light:bg-slate-100">
                 {/* Placeholder VGT logo */}
                 <div className="flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-r from-cyan-400 to-fuchsia-400">
                   <span className="text-xs font-bold text-slate-900">VGT</span>
                 </div>
-                <span className="text-xs font-medium text-white/70">VIGIA Token</span>
+                <span className="text-xs font-medium text-white/70 light:text-slate-700">VIGIA Token</span>
               </div>
             </motion.div>
 
             <motion.h1
               {...fadeUp(0.05)}
-              className="text-4xl font-semibold tracking-tight text-white md:text-6xl"
+              className="text-4xl font-semibold tracking-tight text-white md:text-6xl light:text-slate-900"
             >
               The Economic Engine of{" "}
               <span className="relative inline-block">
-                <span className="text-cyan-400">
+                <span className="text-cyan-400 light:text-cyan-600">
                   the VIGIA Network
                 </span>
               </span>
@@ -87,45 +87,28 @@ export default function VgtTokenHero() {
 
             <motion.p
               {...fadeUp(0.15)}
-              className="mt-6 max-w-2xl text-lg leading-relaxed text-slate-300"
+              className="mt-6 max-w-2xl text-lg leading-relaxed text-slate-300 light:text-slate-600"
             >
-              The <strong className="text-cyan-300">VGT</strong> token rewards contributors who power VIGIA
+              The <strong className="text-cyan-300 light:text-cyan-600">VGT</strong> token rewards contributors who power VIGIA
               with fresh road-hazard data. Whether you're capturing imagery on-device,
               validating AI detections, or curating Geo-RAG memory, your work is
               tracked on-chain and rewarded transparently.
             </motion.p>
 
             <motion.div {...fadeUp(0.25)} className="mt-8 flex flex-wrap items-center gap-3">
-              <motion.div
-                {...springTap}
-                whileHover={{
-                  boxShadow: "0 20px 40px rgba(6, 182, 212, 0.3)",
-                }}
-              >
+              <motion.div {...springTap}>
                 <Link
                   href="/docs"
-                  className="inline-flex items-center gap-2 rounded-full bg-white px-8 py-3.5 font-semibold text-slate-900 shadow-lg transition-all hover:shadow-xl"
+                  className="group inline-flex items-center gap-2 rounded-full border border-slate-600 bg-white px-8 py-3.5 text-sm font-semibold text-slate-900 shadow-lg transition-all hover:bg-slate-100 light:border-slate-300 light:bg-slate-900 light:text-white light:hover:bg-slate-800"
                 >
                   Documentation
-                  <motion.span
-                    initial={{ x: 0 }}
-                    whileHover={{ x: 3 }}
-                    transition={{ type: "spring", stiffness: 400, damping: 10 }}
-                  >
-                    →
-                  </motion.span>
+                  <span className="transform transition-transform duration-200 group-hover:translate-x-1">→</span>
                 </Link>
               </motion.div>
-              <motion.div
-                {...springTap}
-                whileHover={{
-                  borderColor: "rgba(6, 182, 212, 0.5)",
-                  backgroundColor: "rgba(6, 182, 212, 0.1)",
-                }}
-              >
+              <motion.div {...springTap}>
                 <Link
                   href="/dashboard"
-                  className="inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-900/50 px-8 py-3.5 text-white/90 backdrop-blur-lg transition-all hover:bg-slate-800/50 hover:border-slate-600"
+                  className="inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-900/50 px-8 py-3.5 text-sm font-semibold text-white transition-all hover:border-slate-600 hover:bg-slate-800/50 light:border-slate-300 light:bg-white light:text-slate-900 light:hover:border-slate-400 light:hover:bg-slate-50"
                 >
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
@@ -135,16 +118,10 @@ export default function VgtTokenHero() {
                   Open Wallet
                 </Link>
               </motion.div>
-              <motion.div
-                {...springTap}
-                whileHover={{
-                  borderColor: "rgba(168, 85, 247, 0.5)",
-                  backgroundColor: "rgba(168, 85, 247, 0.1)",
-                }}
-              >
+              <motion.div {...springTap}>
                 <Link
                   href="/auth/signin"
-                  className="inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-900/50 px-8 py-3.5 text-white/90 backdrop-blur-lg transition-all hover:bg-slate-800/50 hover:border-slate-600"
+                  className="inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-900/50 px-8 py-3.5 text-sm font-semibold text-white transition-all hover:border-slate-600 hover:bg-slate-800/50 light:border-slate-300 light:bg-white light:text-slate-900 light:hover:border-slate-400 light:hover:bg-slate-50"
                 >
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <polyline points="16 18 22 12 16 6" />
@@ -208,45 +185,32 @@ export default function VgtTokenHero() {
         </div>
 
         {/* Grid connector between sections - full width */}
-        <div className="relative h-20 w-full overflow-hidden border-x border-slate-700/60 bg-[#0B1120]">
+        <div className="relative h-20 w-full overflow-hidden border-x border-slate-700/60 bg-[#0B1120] light:border-slate-200 light:bg-white">
           <div className="absolute inset-0 flex items-center justify-between">
             {Array.from({ length: 100 }).map((_, i) => (
               <div
                 key={i}
-                className="h-full w-px bg-slate-800/40"
+                className="h-full w-px bg-slate-800/40 light:bg-slate-200/60"
               />
             ))}
           </div>
         </div>
 
         {/* RIGHT: phone mock / wallet preview */}
-        <motion.div
-          initial={{ opacity: 0, y: 20, scale: 0.95 }}
-          whileInView={{ opacity: 1, y: 0, scale: 1 }}
-          viewport={{ once: true, margin: "-100px" }}
-          transition={{ delay: 0.15, duration: 0.7, ease: "easeOut" as const }}
-          className="relative border border-slate-700/60 bg-gradient-to-br from-slate-900/40 to-slate-950/40 p-6 backdrop-blur-sm transition-all hover:border-slate-600/80"
+        <div
+          className="relative border border-slate-700/60 bg-gradient-to-br from-slate-900/40 to-slate-950/40 p-6 backdrop-blur-sm transition-all hover:border-slate-600/80 light:border-slate-200 light:from-white/40 light:to-slate-50/40 light:hover:border-slate-300"
         >
-          <motion.div
-            className="mb-4 text-sm font-medium text-white/80"
-            initial={{ opacity: 0, x: -10 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.2 }}
+          <div
+            className="mb-4 text-sm font-medium text-white/80 light:text-slate-700"
           >
             Wallet Preview
-          </motion.div>
+          </div>
 
           {/* Glassy phone frame */}
-          <motion.div
-            className="relative overflow-hidden border border-slate-700/60 bg-gradient-to-br from-slate-900 to-slate-800 p-1 shadow-2xl"
-            initial={{ opacity: 0, scale: 0.95 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.3, duration: 0.5 }}
-            whileHover={{ boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)" }}
+          <div
+            className="relative overflow-hidden border border-slate-700/60 bg-gradient-to-br from-slate-900 to-slate-800 p-1 shadow-2xl light:border-slate-200 light:from-slate-50 light:to-white"
           >
-            <div className="relative h-[420px] w-full overflow-hidden rounded-xl bg-gradient-to-br from-cyan-500/5 to-purple-500/5">
+            <div className="relative h-[420px] w-full overflow-hidden rounded-xl bg-slate-900/50 light:bg-white/50">
               {/* Wallet UI Mockup */}
               <div className="absolute inset-0 p-6">
                 {/* Header */}
@@ -270,55 +234,143 @@ export default function VgtTokenHero() {
 
                 {/* Balance Card */}
                 <motion.div
-                  className="mb-6 rounded-xl bg-gradient-to-r from-cyan-500/10 to-purple-500/10 p-4 ring-1 ring-white/10"
+                  className="mb-6 rounded-xl bg-gradient-to-br from-slate-800/60 to-slate-900/40 p-5 ring-1 ring-slate-700/60 shadow-lg light:from-white light:to-slate-50/60 light:ring-slate-200"
                   initial={{ opacity: 0, scale: 0.9 }}
                   whileInView={{ opacity: 1, scale: 1 }}
                   viewport={{ once: true }}
                   transition={{ delay: 0.5, type: "spring", stiffness: 200 }}
-                  whileHover={{ scale: 1.02, boxShadow: "0 10px 30px rgba(6, 182, 212, 0.2)" }}
                 >
-                  <div className="text-xs text-slate-400 uppercase tracking-wide">Total Balance</div>
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="text-xs text-slate-400 uppercase tracking-wide light:text-slate-600">Total Balance</div>
+                    <motion.div
+                      className="flex items-center gap-1 text-xs text-emerald-400"
+                      initial={{ opacity: 0, scale: 0 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: 1.5, type: "spring" }}
+                    >
+                      <motion.div
+                        className="h-1.5 w-1.5 rounded-full bg-emerald-400"
+                        animate={{ opacity: [1, 0.3, 1] }}
+                        transition={{ duration: 2, repeat: Infinity }}
+                      />
+                      Live
+                    </motion.div>
+                  </div>
                   <motion.div
-                    className="mt-1 text-3xl font-bold text-white"
-                    initial={{ opacity: 0, y: 10 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
+                    className="text-3xl font-bold text-white light:text-slate-900"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
                     transition={{ delay: 0.6 }}
                   >
-                    12,186.35 <span className="text-xl text-slate-400">VGT</span>
+                    <motion.span
+                      key="balance"
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.5 }}
+                    >
+                      12,186.35
+                    </motion.span>
+                    {" "}
+                    <span className="text-xl text-slate-400 light:text-slate-500">VGT</span>
                   </motion.div>
-                  <div className="mt-3 flex items-center justify-between">
+                  <div className="mt-4 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <motion.div
-                        className="flex items-center gap-1 rounded-full bg-emerald-500/20 px-2 py-1"
+                        className="flex items-center gap-1 rounded-full bg-emerald-500/20 px-2.5 py-1 ring-1 ring-emerald-500/30"
                         initial={{ width: 0, opacity: 0 }}
-                        whileInView={{ width: "auto", opacity: 1 }}
-                        viewport={{ once: true }}
-                        transition={{ delay: 0.7, duration: 0.5 }}
+                        animate={{ width: "auto", opacity: 1 }}
+                        transition={{ delay: 0.8, type: "spring", stiffness: 100 }}
                       >
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="text-emerald-400">
+                        <motion.svg
+                          width="12"
+                          height="12"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="3"
+                          className="text-emerald-400"
+                          animate={{ y: [0, -2, 0] }}
+                          transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+                        >
                           <polyline points="18 15 12 9 6 15" />
-                        </svg>
+                        </motion.svg>
                         <span className="text-xs font-semibold text-emerald-400">+2.6%</span>
                       </motion.div>
                       <motion.span
-                        className="text-xs text-slate-500"
-                        initial={{ opacity: 0 }}
-                        whileInView={{ opacity: 1 }}
-                        viewport={{ once: true }}
-                        transition={{ delay: 0.8 }}
+                        className="text-xs font-medium text-slate-500 light:text-slate-600"
+                        initial={{ opacity: 0, x: -5 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.9 }}
                       >
                         +1,320 VGT
                       </motion.span>
                     </div>
                     <motion.div
-                      className="text-xs text-slate-500"
+                      className="text-xs text-slate-500 light:text-slate-600"
                       initial={{ opacity: 0 }}
-                      whileInView={{ opacity: 1 }}
-                      viewport={{ once: true }}
-                      transition={{ delay: 0.8 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.9 }}
                     >
                       Last 30 days
+                    </motion.div>
+                  </div>
+                </motion.div>
+
+                {/* Incoming Transaction Banner */}
+                <motion.div
+                  className="mb-4 overflow-hidden rounded-lg bg-gradient-to-r from-emerald-500/10 via-cyan-500/10 to-emerald-500/10 p-3 ring-1 ring-emerald-500/20"
+                  initial={{ opacity: 0, y: -20, height: 0 }}
+                  animate={{ opacity: 1, y: 0, height: "auto" }}
+                  transition={{ delay: 2, type: "spring", stiffness: 100 }}
+                >
+                  <div className="flex items-center gap-3">
+                    <motion.div
+                      className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500/30"
+                      animate={{ scale: [1, 1.1, 1] }}
+                      transition={{ duration: 2, repeat: Infinity }}
+                    >
+                      <motion.svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                        className="text-emerald-400"
+                        initial={{ pathLength: 0 }}
+                        animate={{ pathLength: 1 }}
+                        transition={{ delay: 2.3, duration: 0.5 }}
+                      >
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                        <polyline points="22 4 12 14.01 9 11.01" />
+                      </motion.svg>
+                    </motion.div>
+                    <div className="flex-1">
+                      <motion.div
+                        className="text-xs font-semibold text-emerald-300"
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 2.2 }}
+                      >
+                        Incoming Transaction
+                      </motion.div>
+                      <motion.div
+                        className="text-xs text-slate-500"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 2.4 }}
+                      >
+                        Road hazard validation
+                      </motion.div>
+                    </div>
+                    <motion.div
+                      className="text-right"
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: 2.3, type: "spring" }}
+                    >
+                      <div className="text-sm font-bold text-emerald-400">+15.5 VGT</div>
+                      <div className="text-xs text-slate-500">Just now</div>
                     </motion.div>
                   </div>
                 </motion.div>
@@ -343,7 +395,7 @@ export default function VgtTokenHero() {
                       hidden: { opacity: 0 },
                       visible: { opacity: 1 }
                     }}
-                    className="text-xs text-slate-400 uppercase tracking-wide mb-3"
+                    className="text-xs text-slate-400 uppercase tracking-wide mb-3 light:text-slate-600"
                   >
                     Recent Activity
                   </motion.div>
@@ -353,18 +405,18 @@ export default function VgtTokenHero() {
                         hidden: { opacity: 0, x: -20 },
                         visible: { opacity: 1, x: 0 }
                       }}
-                      className="flex items-center justify-between rounded-lg bg-white/5 p-3 hover:bg-white/10 transition-colors cursor-pointer"
+                      className="flex items-center justify-between rounded-lg bg-white/5 p-3 hover:bg-white/10 transition-colors cursor-pointer light:bg-slate-100/50 light:hover:bg-slate-200/50"
                       whileHover={{ x: 4 }}
                     >
                       <div className="flex items-center gap-3">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500/20">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500/20 ring-1 ring-emerald-500/30">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-emerald-400">
                             <polyline points="20 6 9 17 4 12" />
                           </svg>
                         </div>
                         <div>
-                          <div className="text-xs font-medium text-white">Hazard Validated</div>
-                          <div className="text-xs text-slate-500">Pothole • Mumbai</div>
+                          <div className="text-xs font-medium text-white light:text-slate-900">Hazard Validated</div>
+                          <div className="text-xs text-slate-500 light:text-slate-600">Pothole • Mumbai</div>
                         </div>
                       </div>
                       <div className="text-right">
@@ -378,19 +430,19 @@ export default function VgtTokenHero() {
                         hidden: { opacity: 0, x: -20 },
                         visible: { opacity: 1, x: 0 }
                       }}
-                      className="flex items-center justify-between rounded-lg bg-white/5 p-3 hover:bg-white/10 transition-colors cursor-pointer"
+                      className="flex items-center justify-between rounded-lg bg-white/5 p-3 hover:bg-white/10 transition-colors cursor-pointer light:bg-slate-100/50 light:hover:bg-slate-200/50"
                       whileHover={{ x: 4 }}
                     >
                       <div className="flex items-center gap-3">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-cyan-500/20">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-cyan-500/20 ring-1 ring-cyan-500/30">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-cyan-400">
                             <circle cx="12" cy="12" r="10" />
                             <path d="M12 6v6l4 2" />
                           </svg>
                         </div>
                         <div>
-                          <div className="text-xs font-medium text-white">V2X Contribution</div>
-                          <div className="text-xs text-slate-500">Network consensus</div>
+                          <div className="text-xs font-medium text-white light:text-slate-900">V2X Contribution</div>
+                          <div className="text-xs text-slate-500 light:text-slate-600">Network consensus</div>
                         </div>
                       </div>
                       <div className="text-right">
@@ -404,11 +456,11 @@ export default function VgtTokenHero() {
                         hidden: { opacity: 0, x: -20 },
                         visible: { opacity: 1, x: 0 }
                       }}
-                      className="flex items-center justify-between rounded-lg bg-white/5 p-3 hover:bg-white/10 transition-colors cursor-pointer"
+                      className="flex items-center justify-between rounded-lg bg-white/5 p-3 hover:bg-white/10 transition-colors cursor-pointer light:bg-slate-100/50 light:hover:bg-slate-200/50"
                       whileHover={{ x: 4 }}
                     >
                       <div className="flex items-center gap-3">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-purple-500/20">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-purple-500/20 ring-1 ring-purple-500/30">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-purple-400">
                             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                             <polyline points="7 10 12 15 17 10" />
@@ -416,8 +468,8 @@ export default function VgtTokenHero() {
                           </svg>
                         </div>
                         <div>
-                          <div className="text-xs font-medium text-white">Data Contribution</div>
-                          <div className="text-xs text-slate-500">25km coverage</div>
+                          <div className="text-xs font-medium text-white light:text-slate-900">Data Contribution</div>
+                          <div className="text-xs text-slate-500 light:text-slate-600">25km coverage</div>
                         </div>
                       </div>
                       <div className="text-right">
@@ -453,7 +505,7 @@ export default function VgtTokenHero() {
                 +1,320 <span className="text-emerald-300 font-semibold">+2.6%</span>
               </motion.div>
             </div>
-          </motion.div>
+          </div>
 
           {/* CTA row under preview */}
           <motion.div
@@ -479,14 +531,10 @@ export default function VgtTokenHero() {
                 whileInView={{ opacity: 1, scale: 1 }}
                 viewport={{ once: true }}
                 transition={{ delay: 1.1 }}
-                whileHover={{
-                  borderColor: "rgba(6, 182, 212, 0.5)",
-                  backgroundColor: "rgba(6, 182, 212, 0.1)",
-                }}
               >
                 <Link
                   href="/pricing"
-                  className="inline-flex items-center gap-1.5 rounded-full border border-slate-700 bg-slate-900/50 px-8 py-3.5 text-sm text-white/90 backdrop-blur-lg transition-all hover:bg-slate-800/50 hover:border-slate-600"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-slate-700 bg-slate-900/50 px-8 py-3.5 text-sm font-semibold text-white transition-all hover:border-slate-600 hover:bg-slate-800/50 light:border-slate-300 light:bg-white light:text-slate-900 light:hover:border-slate-400 light:hover:bg-slate-50"
                 >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <circle cx="12" cy="12" r="10" />
@@ -501,13 +549,10 @@ export default function VgtTokenHero() {
                 whileInView={{ opacity: 1, scale: 1 }}
                 viewport={{ once: true }}
                 transition={{ delay: 1.2 }}
-                whileHover={{
-                  boxShadow: "0 10px 30px rgba(255, 255, 255, 0.3)",
-                }}
               >
                 <Link
                   href="/auth/signup"
-                  className="inline-flex items-center gap-1.5 rounded-full bg-white px-8 py-3.5 text-sm font-semibold text-slate-900 shadow-lg transition-all hover:shadow-xl hover:-translate-y-0.5"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-slate-600 bg-white px-8 py-3.5 text-sm font-semibold text-slate-900 shadow-lg transition-all hover:bg-slate-100 light:border-slate-300 light:bg-slate-900 light:text-white light:hover:bg-slate-800"
                 >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                     <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
@@ -521,7 +566,7 @@ export default function VgtTokenHero() {
             </div>
           </motion.div>
 
-        </motion.div>
+        </div>
       </div>
     </section>
   );

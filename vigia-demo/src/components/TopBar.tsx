@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useProfile } from "@/hooks/useProfile";
+import ThemeToggle from "@/components/ThemeToggle";
 
 type NavLink = { href: string; label: string; description?: string };
 type DropdownItem = { href: string; label: string; description: string; external?: boolean };
@@ -132,12 +133,12 @@ export default function TopBar() {
       {/* Banner */}
       <Link
         href="/sandbox"
-        className="group block w-full text-center text-sm text-white/90 py-2.5 border-b border-slate-800/60 bg-[#0B1120]"
+        className="group block w-full text-center text-sm text-white/90 py-2.5 border-b border-slate-800/60 bg-[#0B1120] light:bg-white light:text-slate-900 light:border-slate-200"
         style={{ fontFamily: 'system-ui, -apple-system, "Segoe UI", sans-serif' }}
       >
         <span className="font-medium">
           Check out our{" "}
-          <span className="text-cyan-400">Sandbox</span> to explore our features
+          <span className="text-cyan-400 light:text-blue-600">Sandbox</span> to explore our features
         </span>
         <span
           aria-hidden
@@ -148,12 +149,12 @@ export default function TopBar() {
       </Link>
 
       {/* Main navigation bar */}
-      <div className="relative w-full border-b border-slate-800/60 bg-[#0B1120]">
+      <div className="relative w-full border-b border-slate-800/60 bg-[#0B1120] light:bg-white light:border-slate-200">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <nav aria-label="Primary" className="h-16 flex items-center justify-between" style={{ fontFamily: 'system-ui, -apple-system, "Segoe UI", sans-serif' }}>
             {/* Brand */}
             <Link href="/" className="group flex items-center gap-2">
-              <span className="text-xl md:text-2xl font-bold tracking-tight text-white">
+              <span className="text-xl md:text-2xl font-bold tracking-tight text-white light:text-slate-900">
                 VIGIA
               </span>
             </Link>
@@ -164,7 +165,7 @@ export default function TopBar() {
               <div className="relative" ref={resourcesRef}>
                 <button
                   onClick={() => setResourcesOpen(!resourcesOpen)}
-                  className="flex items-center gap-1.5 text-sm font-medium text-slate-300 hover:text-white transition-colors uppercase tracking-wide"
+                  className="flex items-center gap-1.5 text-sm font-medium text-slate-300 hover:text-white transition-colors uppercase tracking-wide light:text-slate-600 light:hover:text-slate-900"
                   style={{ fontFamily: 'ui-monospace, "SF Mono", Consolas, monospace' }}
                 >
                   RESOURCES
@@ -180,18 +181,18 @@ export default function TopBar() {
 
                 {/* Resources dropdown menu */}
                 {resourcesOpen && (
-                  <div className="absolute top-full right-0 mt-2 w-[480px] rounded-lg border border-slate-800 bg-[#0B1120] shadow-2xl overflow-hidden">
-                    <div className="grid grid-cols-2 divide-x divide-slate-800">
+                  <div className="absolute top-full right-0 mt-2 w-[480px] rounded-lg border border-slate-800 bg-[#0B1120] shadow-2xl overflow-hidden light:bg-white light:border-slate-200">
+                    <div className="grid grid-cols-2 divide-x divide-slate-800 light:divide-slate-200">
                       <div className="p-6 space-y-4">
                         <Link
                           href="/sandbox"
                           onClick={() => setResourcesOpen(false)}
                           className="block group"
                         >
-                          <div className="text-sm font-bold text-white uppercase tracking-wide" style={{ fontFamily: 'ui-monospace, "SF Mono", Consolas, monospace' }}>
+                          <div className="text-sm font-bold text-white uppercase tracking-wide light:text-slate-900" style={{ fontFamily: 'ui-monospace, "SF Mono", Consolas, monospace' }}>
                             SANDBOX
                           </div>
-                          <div className="mt-1 text-sm text-slate-400">
+                          <div className="mt-1 text-sm text-slate-400 light:text-slate-600">
                             Try live demos and simulations
                           </div>
                         </Link>
@@ -202,10 +203,10 @@ export default function TopBar() {
                             onClick={() => setResourcesOpen(false)}
                             className="block group"
                           >
-                            <div className="text-xs font-bold text-white uppercase tracking-wide group-hover:text-cyan-400 transition-colors" style={{ fontFamily: 'ui-monospace, "SF Mono", Consolas, monospace' }}>
+                            <div className="text-xs font-bold text-white uppercase tracking-wide group-hover:text-cyan-400 transition-colors light:text-slate-900 light:group-hover:text-blue-600" style={{ fontFamily: 'ui-monospace, "SF Mono", Consolas, monospace' }}>
                               {item.label}
                             </div>
-                            <div className="mt-0.5 text-xs text-slate-400">
+                            <div className="mt-0.5 text-xs text-slate-400 light:text-slate-600">
                               {item.description}
                             </div>
                           </Link>
@@ -219,10 +220,10 @@ export default function TopBar() {
                             onClick={() => setResourcesOpen(false)}
                             className="block group"
                           >
-                            <div className="text-xs font-bold text-white uppercase tracking-wide group-hover:text-cyan-400 transition-colors" style={{ fontFamily: 'ui-monospace, "SF Mono", Consolas, monospace' }}>
+                            <div className="text-xs font-bold text-white uppercase tracking-wide group-hover:text-cyan-400 transition-colors light:text-slate-900 light:group-hover:text-blue-600" style={{ fontFamily: 'ui-monospace, "SF Mono", Consolas, monospace' }}>
                               {item.label}
                             </div>
-                            <div className="mt-0.5 text-xs text-slate-400">
+                            <div className="mt-0.5 text-xs text-slate-400 light:text-slate-600">
                               {item.description}
                             </div>
                           </Link>
@@ -241,7 +242,7 @@ export default function TopBar() {
                     key={href}
                     href={href}
                     className={`text-sm font-medium uppercase tracking-wide transition-colors ${
-                      active ? "text-white" : "text-slate-300 hover:text-white"
+                      active ? "text-white light:text-slate-900" : "text-slate-300 hover:text-white light:text-slate-600 light:hover:text-slate-900"
                     }`}
                     style={{ fontFamily: 'ui-monospace, "SF Mono", Consolas, monospace' }}
                   >
@@ -252,7 +253,7 @@ export default function TopBar() {
 
               <Link
                 href="/careers"
-                className="text-sm font-medium text-slate-300 hover:text-white transition-colors uppercase tracking-wide"
+                className="text-sm font-medium text-slate-300 hover:text-white transition-colors uppercase tracking-wide light:text-slate-600 light:hover:text-slate-900"
                 style={{ fontFamily: 'ui-monospace, "SF Mono", Consolas, monospace' }}
               >
                 CAREERS
@@ -260,11 +261,13 @@ export default function TopBar() {
 
               <Link
                 href="/enterprise"
-                className="text-sm font-medium text-slate-300 hover:text-white transition-colors uppercase tracking-wide"
+                className="text-sm font-medium text-slate-300 hover:text-white transition-colors uppercase tracking-wide light:text-slate-600 light:hover:text-slate-900"
                 style={{ fontFamily: 'ui-monospace, "SF Mono", Consolas, monospace' }}
               >
                 ENTERPRISE
               </Link>
+
+              <ThemeToggle />
 
               <button
                 onClick={handleStart}
