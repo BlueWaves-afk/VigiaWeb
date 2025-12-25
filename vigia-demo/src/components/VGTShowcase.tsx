@@ -1,4 +1,4 @@
-// components/VgtTokenHero.tsx
+// components/VGTShowcase.tsx
 "use client";
 
 import { motion } from "framer-motion";
@@ -6,7 +6,8 @@ import Link from "next/link";
 
 const fadeUp = (delay = 0) => ({
   initial: { opacity: 0, y: 12 },
-  animate: { opacity: 1, y: 0 },
+  whileInView: { opacity: 1, y: 0 },
+  viewport: { once: true, amount: 0.5 },
   transition: { delay, duration: 0.6, ease: "easeOut" as const },
 });
 
@@ -17,8 +18,8 @@ const springTap = {
     transition: {
       type: "spring" as const,
       stiffness: 400,
-      damping: 25
-    }
+      damping: 25,
+    },
   },
   whileTap: { scale: 0.98, y: 0 },
 };
@@ -37,537 +38,322 @@ function StatCard({
   return (
     <motion.div
       {...fadeUp(delay)}
-      className="group border border-slate-800/60 bg-slate-950/60 p-6 backdrop-blur-sm transition-all hover:border-slate-700/60 light:border-slate-200 light:bg-white light:hover:border-slate-300"
+      className="group rounded-xl border border-slate-800/60 bg-slate-950/70 p-6 backdrop-blur-md transition-all hover:border-cyan-500/60 light:border-slate-200 light:bg-white light:hover:border-blue-500/60"
     >
       <div className="mb-4 flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-full">
+        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-900/60 light:bg-slate-100">
           {icon}
         </div>
-        <h4 className="text-base font-semibold text-white light:text-slate-900">{title}</h4>
+        <h4 className="text-sm font-semibold text-white light:text-slate-900">
+          {title}
+        </h4>
       </div>
-      <div className="text-sm leading-relaxed text-slate-400 light:text-slate-600">{children}</div>
+      <div className="text-xs md:text-sm leading-relaxed text-slate-400 light:text-slate-600">
+        {children}
+      </div>
     </motion.div>
   );
 }
 
-export default function VgtTokenHero() {
+export default function VGTShowcaseSection() {
   return (
-    <section className="relative min-h-screen overflow-hidden bg-[#0B1120] light:bg-white">
-      {/* Fine grid background pattern */}
-      <div className="pointer-events-none absolute inset-0 opacity-30 light:opacity-20">
-        <div className="h-full w-full bg-[linear-gradient(to_right,rgba(56,189,248,.06)_1px,transparent_1px),linear-gradient(to_bottom,rgba(56,189,248,.06)_1px,transparent_1px)] bg-[size:4px_4px] light:bg-[linear-gradient(to_right,rgba(14,165,233,.08)_1px,transparent_1px),linear-gradient(to_bottom,rgba(14,165,233,.08)_1px,transparent_1px)]" />
-      </div>
+    <section className="relative py-24 lg:py-28">
+      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        {/* Section header */}
+        <div className="mb-10 max-w-3xl">
+          <p className="mb-3 text-xs font-medium tracking-[0.22em] text-cyan-400 light:text-blue-600">
+            ECONOMICS
+          </p>
+          <h2 className="text-3xl font-semibold tracking-tight text-white md:text-4xl lg:text-5xl light:text-slate-900">
+            VGT powers the{" "}
+            <span className="text-cyan-400 light:text-cyan-600">
+              road‑hazard economy.
+            </span>
+          </h2>
+          <p className="mt-4 max-w-xl text-sm md:text-base leading-relaxed text-slate-400 light:text-slate-600">
+            Contributors earn VGT for verified road-hazard data. Developers spend
+            VGT for APIs, GeoRAG tiles, and alerts—closing the loop between
+            supply and demand.
+          </p>
+        </div>
 
-      <div className="relative mx-auto max-w-7xl px-4 pb-24 sm:px-6 lg:px-8">
-        {/* Main intro card */}
-        <div className="border border-slate-700/60 bg-gradient-to-br from-slate-900/40 to-slate-950/40 p-12 backdrop-blur-sm light:border-slate-200 light:from-white/40 light:to-slate-50/40">
-          {/* LEFT: copy + actions */}
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
+          {/* Left: copy + stats */}
           <div>
             <motion.div {...fadeUp(0)}>
-              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 backdrop-blur-lg light:border-slate-200 light:bg-slate-100">
-                {/* Placeholder VGT logo */}
+              <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/70 backdrop-blur-lg light:border-slate-200 light:bg-slate-100 light:text-slate-700">
                 <div className="flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-r from-cyan-400 to-fuchsia-400">
-                  <span className="text-xs font-bold text-slate-900">VGT</span>
+                  <span className="text-[10px] font-bold text-slate-900">VGT</span>
                 </div>
-                <span className="text-xs font-medium text-white/70 light:text-slate-700">VIGIA Token</span>
+                VIGIA Token
               </div>
             </motion.div>
 
-            <motion.h1
-              {...fadeUp(0.05)}
-              className="text-4xl font-semibold tracking-tight text-white md:text-6xl light:text-slate-900"
-            >
-              The Economic Engine of{" "}
-              <span className="relative inline-block">
-                <span className="text-cyan-400 light:text-cyan-600">
-                  the VIGIA Network
-                </span>
-              </span>
-            </motion.h1>
-
             <motion.p
-              {...fadeUp(0.15)}
-              className="mt-6 max-w-2xl text-lg leading-relaxed text-slate-300 light:text-slate-600"
+              {...fadeUp(0.1)}
+              className="mt-5 max-w-xl text-sm md:text-base leading-relaxed text-slate-300 light:text-slate-600"
             >
-              The <strong className="text-cyan-300 light:text-cyan-600">VGT</strong> token rewards contributors who power VIGIA
-              with fresh road-hazard data. Whether you're capturing imagery on-device,
-              validating AI detections, or curating Geo-RAG memory, your work is
-              tracked on-chain and rewarded transparently.
+              VGT is the settlement layer for VIGIA: every confirmed hazard,
+              every data tile, and every high-priority alert eventually flows
+              through this token. Rewards are transparent and on‑chain.
             </motion.p>
 
-            <motion.div {...fadeUp(0.25)} className="mt-8 flex flex-wrap items-center gap-3">
+            <motion.div
+              {...fadeUp(0.2)}
+              className="mt-7 flex flex-wrap gap-3"
+            >
               <motion.div {...springTap}>
                 <Link
                   href="/docs"
-                  className="group inline-flex items-center gap-2 rounded-full border border-slate-600 bg-white px-8 py-3.5 text-sm font-semibold text-slate-900 shadow-lg transition-all hover:bg-slate-100 light:border-slate-300 light:bg-slate-900 light:text-white light:hover:bg-slate-800"
+                  className="inline-flex items-center gap-2 rounded-full bg-white px-7 py-3.5 text-sm font-semibold text-slate-900 shadow-lg transition-all hover:bg-slate-100 light:bg-slate-900 light:text-white light:hover:bg-slate-800"
                 >
-                  Documentation
-                  <span className="transform transition-transform duration-200 group-hover:translate-x-1">→</span>
+                  Token documentation
+                  <span className="transition-transform group-hover:translate-x-1">
+                    →
+                  </span>
                 </Link>
               </motion.div>
               <motion.div {...springTap}>
                 <Link
                   href="/dashboard"
-                  className="inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-900/50 px-8 py-3.5 text-sm font-semibold text-white transition-all hover:border-slate-600 hover:bg-slate-800/50 light:border-slate-300 light:bg-white light:text-slate-900 light:hover:border-slate-400 light:hover:bg-slate-50"
+                  className="inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-950/60 px-7 py-3.5 text-sm font-semibold text-white transition-all hover:border-slate-500 hover:bg-slate-900/80 light:border-slate-300 light:bg-white light:text-slate-900 light:hover:border-slate-400 light:hover:bg-slate-50"
                 >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                    <line x1="12" y1="8" x2="12" y2="16" />
-                    <line x1="8" y1="12" x2="16" y2="12" />
-                  </svg>
-                  Open Wallet
-                </Link>
-              </motion.div>
-              <motion.div {...springTap}>
-                <Link
-                  href="/auth/signin"
-                  className="inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-900/50 px-8 py-3.5 text-sm font-semibold text-white transition-all hover:border-slate-600 hover:bg-slate-800/50 light:border-slate-300 light:bg-white light:text-slate-900 light:hover:border-slate-400 light:hover:bg-slate-50"
-                >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <polyline points="16 18 22 12 16 6" />
-                    <polyline points="8 6 2 12 8 18" />
-                  </svg>
-                  Build with VGT
+                  Open wallet
                 </Link>
               </motion.div>
             </motion.div>
 
-            {/* Info cards */}
-            <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:max-w-xl">
               <StatCard
-                title="Data Usage"
-                delay={0.1}
+                title="Data usage"
+                delay={0.25}
                 icon={
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 to-cyan-600">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 to-cyan-600">
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
                       <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
-                      <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
-                      <line x1="12" y1="22.08" x2="12" y2="12" />
                     </svg>
                   </div>
                 }
               >
-                Developers redeem VGT for API credits, hazard tiles, and Geo-RAG
-                queries. Network fees recycle value to contributors.
+                Developers redeem VGT for API credits, hazard tiles, and
+                GeoRAG queries. Network fees recycle value to contributors.
               </StatCard>
 
               <StatCard
-                title="VGT Burn"
-                delay={0.15}
+                title="Reward split"
+                delay={0.3}
                 icon={
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-pink-500 to-rose-600">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-green-600">
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <path d="M12 3v18" />
+                      <path d="M5 9h7a4 4 0 0 1 0 8H5" />
+                    </svg>
+                  </div>
+                }
+              >
+                Only confirmed hazards mint VGT. Publishers and validators
+                share rewards according to a transparent on‑chain split.
+              </StatCard>
+
+              <StatCard
+                title="Burn & scarcity"
+                delay={0.35}
+                icon={
+                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-pink-500 to-rose-600">
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
                       <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
                     </svg>
                   </div>
                 }
               >
-                A portion of redemptions is burned; another portion flows to
-                the rewards pool, aligning usage with long-term scarcity.
+                A portion of network spend is burned, while another portion
+                flows to future rewards, aligning usage with long‑term
+                scarcity.
               </StatCard>
 
               <StatCard
-                title="Sustainable Economics"
-                delay={0.2}
+                title="Built for contributors"
+                delay={0.4}
                 icon={
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-green-600">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-indigo-600">
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <circle cx="8" cy="8" r="3" />
+                      <circle cx="16" cy="8" r="3" />
+                      <path d="M4 21v-2a4 4 0 0 1 4-4h0" />
+                      <path d="M20 21v-2a4 4 0 0 0-4-4h0" />
                     </svg>
                   </div>
                 }
               >
-                Earn for verified contributions; spend for premium maps, alerts,
-                and SDK features—closing the loop between supply and demand.
+                On‑device capture, validation, and V2X participation all
+                accrue rewards, even when you’re far from the cloud.
               </StatCard>
             </div>
           </div>
-        </div>
 
-        {/* Grid connector between sections - full width */}
-        <div className="relative h-20 w-full overflow-hidden border-x border-slate-700/60 bg-[#0B1120] light:border-slate-200 light:bg-white">
-          <div className="absolute inset-0 flex items-center justify-between">
-            {Array.from({ length: 100 }).map((_, i) => (
-              <div
-                key={i}
-                className="h-full w-px bg-slate-800/40 light:bg-slate-200/60"
-              />
-            ))}
-          </div>
-        </div>
-
-        {/* RIGHT: phone mock / wallet preview */}
-        <div
-          className="relative border border-slate-700/60 bg-gradient-to-br from-slate-900/40 to-slate-950/40 p-6 backdrop-blur-sm transition-all hover:border-slate-600/80 light:border-slate-200 light:from-white/40 light:to-slate-50/40 light:hover:border-slate-300"
-        >
-          <div
-            className="mb-4 text-sm font-medium text-white/80 light:text-slate-700"
+          {/* Right: wallet preview card (slightly simplified) */}
+          <motion.div
+            {...fadeUp(0.15)}
+            className="card-glass border-slate-800/60 bg-slate-950/80 p-6 md:p-7 light:border-slate-200 light:bg-white"
           >
-            Wallet Preview
-          </div>
+            <div className="mb-4 text-xs font-medium uppercase tracking-[0.18em] text-slate-400 light:text-slate-500">
+              WALLET PREVIEW
+            </div>
 
-          {/* Glassy phone frame */}
-          <div
-            className="relative overflow-hidden border border-slate-700/60 bg-gradient-to-br from-slate-900 to-slate-800 p-1 shadow-2xl light:border-slate-200 light:from-slate-50 light:to-white"
-          >
-            <div className="relative h-[420px] w-full overflow-hidden rounded-xl bg-slate-900/50 light:bg-white/50">
-              {/* Wallet UI Mockup */}
-              <div className="absolute inset-0 p-6">
-                {/* Header */}
-                <motion.div
-                  className="mb-6"
-                  initial={{ opacity: 0, x: -20 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: 0.4 }}
-                >
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="h-8 w-8 rounded-full bg-gradient-to-r from-cyan-400 to-fuchsia-400 flex items-center justify-center">
-                      <span className="text-xs font-bold text-slate-900">VGT</span>
+            <div className="relative overflow-hidden rounded-2xl border border-slate-800/70 bg-gradient-to-br from-slate-900 to-slate-800 p-5 shadow-2xl light:border-slate-200 light:from-slate-50 light:to-white">
+              {/* Header */}
+              <div className="mb-5 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-r from-cyan-400 to-fuchsia-400">
+                    <span className="text-xs font-bold text-slate-900">
+                      VGT
+                    </span>
+                  </div>
+                  <div>
+                    <div className="text-[11px] text-slate-400">
+                      Contributor wallet
                     </div>
-                    <div>
-                      <div className="text-xs text-slate-500">Contributor Wallet</div>
-                      <div className="text-sm font-semibold text-white">0x742d...3f8a</div>
+                    <div className="text-xs font-semibold text-white">
+                      0x742d…3f8a
                     </div>
                   </div>
-                </motion.div>
+                </div>
+                <div className="rounded-full bg-black/40 px-3 py-1 text-[10px] font-medium uppercase tracking-wide text-emerald-300">
+                  Live
+                </div>
+              </div>
 
-                {/* Balance Card */}
-                <motion.div
-                  className="mb-6 rounded-xl bg-gradient-to-br from-slate-800/60 to-slate-900/40 p-5 ring-1 ring-slate-700/60 shadow-lg light:from-white light:to-slate-50/60 light:ring-slate-200"
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  whileInView={{ opacity: 1, scale: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: 0.5, type: "spring", stiffness: 200 }}
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="text-xs text-slate-400 uppercase tracking-wide light:text-slate-600">Total Balance</div>
-                    <motion.div
-                      className="flex items-center gap-1 text-xs text-emerald-400"
-                      initial={{ opacity: 0, scale: 0 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: 1.5, type: "spring" }}
-                    >
-                      <motion.div
-                        className="h-1.5 w-1.5 rounded-full bg-emerald-400"
-                        animate={{ opacity: [1, 0.3, 1] }}
-                        transition={{ duration: 2, repeat: Infinity }}
-                      />
-                      Live
-                    </motion.div>
+              {/* Balance */}
+              <div className="mb-5">
+                <div className="text-[11px] uppercase tracking-wide text-slate-400">
+                  Total balance
+                </div>
+                <div className="mt-1 flex items-baseline gap-1">
+                  <div className="text-2xl font-semibold text-white">
+                    12,186.35
                   </div>
-                  <motion.div
-                    className="text-3xl font-bold text-white light:text-slate-900"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.6 }}
-                  >
-                    <motion.span
-                      key="balance"
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.5 }}
-                    >
-                      12,186.35
-                    </motion.span>
-                    {" "}
-                    <span className="text-xl text-slate-400 light:text-slate-500">VGT</span>
-                  </motion.div>
-                  <div className="mt-4 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <motion.div
-                        className="flex items-center gap-1 rounded-full bg-emerald-500/20 px-2.5 py-1 ring-1 ring-emerald-500/30"
-                        initial={{ width: 0, opacity: 0 }}
-                        animate={{ width: "auto", opacity: 1 }}
-                        transition={{ delay: 0.8, type: "spring", stiffness: 100 }}
-                      >
-                        <motion.svg
-                          width="12"
-                          height="12"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="3"
-                          className="text-emerald-400"
-                          animate={{ y: [0, -2, 0] }}
-                          transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-                        >
-                          <polyline points="18 15 12 9 6 15" />
-                        </motion.svg>
-                        <span className="text-xs font-semibold text-emerald-400">+2.6%</span>
-                      </motion.div>
-                      <motion.span
-                        className="text-xs font-medium text-slate-500 light:text-slate-600"
-                        initial={{ opacity: 0, x: -5 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.9 }}
-                      >
-                        +1,320 VGT
-                      </motion.span>
-                    </div>
-                    <motion.div
-                      className="text-xs text-slate-500 light:text-slate-600"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: 0.9 }}
-                    >
-                      Last 30 days
-                    </motion.div>
+                  <span className="text-xs text-slate-400">VGT</span>
+                </div>
+                <div className="mt-3 flex items-center justify-between text-[11px] text-slate-400">
+                  <div className="inline-flex items-center gap-2 rounded-full bg-emerald-500/20 px-2.5 py-1 text-emerald-300">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                    +1,320 VGT (+2.6%)
                   </div>
-                </motion.div>
+                  <span>Last 30 days</span>
+                </div>
+              </div>
 
-                {/* Incoming Transaction Banner */}
-                <motion.div
-                  className="mb-4 overflow-hidden rounded-lg bg-gradient-to-r from-emerald-500/10 via-cyan-500/10 to-emerald-500/10 p-3 ring-1 ring-emerald-500/20"
-                  initial={{ opacity: 0, y: -20, height: 0 }}
-                  animate={{ opacity: 1, y: 0, height: "auto" }}
-                  transition={{ delay: 2, type: "spring", stiffness: 100 }}
-                >
-                  <div className="flex items-center gap-3">
-                    <motion.div
-                      className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500/30"
-                      animate={{ scale: [1, 1.1, 1] }}
-                      transition={{ duration: 2, repeat: Infinity }}
-                    >
-                      <motion.svg
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2.5"
-                        className="text-emerald-400"
-                        initial={{ pathLength: 0 }}
-                        animate={{ pathLength: 1 }}
-                        transition={{ delay: 2.3, duration: 0.5 }}
-                      >
-                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                        <polyline points="22 4 12 14.01 9 11.01" />
-                      </motion.svg>
-                    </motion.div>
-                    <div className="flex-1">
-                      <motion.div
-                        className="text-xs font-semibold text-emerald-300"
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 2.2 }}
-                      >
-                        Incoming Transaction
-                      </motion.div>
-                      <motion.div
-                        className="text-xs text-slate-500"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: 2.4 }}
-                      >
-                        Road hazard validation
-                      </motion.div>
-                    </div>
-                    <motion.div
-                      className="text-right"
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: 2.3, type: "spring" }}
-                    >
-                      <div className="text-sm font-bold text-emerald-400">+15.5 VGT</div>
-                      <div className="text-xs text-slate-500">Just now</div>
-                    </motion.div>
-                  </div>
-                </motion.div>
-
-                {/* Activity */}
-                <motion.div
-                  initial="hidden"
-                  whileInView="visible"
-                  viewport={{ once: true }}
-                  variants={{
-                    hidden: {},
-                    visible: {
-                      transition: {
-                        staggerChildren: 0.1,
-                        delayChildren: 0.7
-                      }
-                    }
-                  }}
-                >
-                  <motion.div
-                    variants={{
-                      hidden: { opacity: 0 },
-                      visible: { opacity: 1 }
-                    }}
-                    className="text-xs text-slate-400 uppercase tracking-wide mb-3 light:text-slate-600"
-                  >
-                    Recent Activity
-                  </motion.div>
-                  <div className="space-y-2">
-                    <motion.div
-                      variants={{
-                        hidden: { opacity: 0, x: -20 },
-                        visible: { opacity: 1, x: 0 }
-                      }}
-                      className="flex items-center justify-between rounded-lg bg-white/5 p-3 hover:bg-white/10 transition-colors cursor-pointer light:bg-slate-100/50 light:hover:bg-slate-200/50"
-                      whileHover={{ x: 4 }}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500/20 ring-1 ring-emerald-500/30">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-emerald-400">
-                            <polyline points="20 6 9 17 4 12" />
-                          </svg>
-                        </div>
-                        <div>
-                          <div className="text-xs font-medium text-white light:text-slate-900">Hazard Validated</div>
-                          <div className="text-xs text-slate-500 light:text-slate-600">Pothole • Mumbai</div>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-xs font-semibold text-emerald-400">+15.5 VGT</div>
-                        <div className="text-xs text-slate-500">2h ago</div>
-                      </div>
-                    </motion.div>
-
-                    <motion.div
-                      variants={{
-                        hidden: { opacity: 0, x: -20 },
-                        visible: { opacity: 1, x: 0 }
-                      }}
-                      className="flex items-center justify-between rounded-lg bg-white/5 p-3 hover:bg-white/10 transition-colors cursor-pointer light:bg-slate-100/50 light:hover:bg-slate-200/50"
-                      whileHover={{ x: 4 }}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-cyan-500/20 ring-1 ring-cyan-500/30">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-cyan-400">
-                            <circle cx="12" cy="12" r="10" />
-                            <path d="M12 6v6l4 2" />
-                          </svg>
-                        </div>
-                        <div>
-                          <div className="text-xs font-medium text-white light:text-slate-900">V2X Contribution</div>
-                          <div className="text-xs text-slate-500 light:text-slate-600">Network consensus</div>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-xs font-semibold text-cyan-400">+8.2 VGT</div>
-                        <div className="text-xs text-slate-500">5h ago</div>
-                      </div>
-                    </motion.div>
-
-                    <motion.div
-                      variants={{
-                        hidden: { opacity: 0, x: -20 },
-                        visible: { opacity: 1, x: 0 }
-                      }}
-                      className="flex items-center justify-between rounded-lg bg-white/5 p-3 hover:bg-white/10 transition-colors cursor-pointer light:bg-slate-100/50 light:hover:bg-slate-200/50"
-                      whileHover={{ x: 4 }}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-purple-500/20 ring-1 ring-purple-500/30">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-purple-400">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                            <polyline points="7 10 12 15 17 10" />
-                            <line x1="12" y1="15" x2="12" y2="3" />
-                          </svg>
-                        </div>
-                        <div>
-                          <div className="text-xs font-medium text-white light:text-slate-900">Data Contribution</div>
-                          <div className="text-xs text-slate-500 light:text-slate-600">25km coverage</div>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-xs font-semibold text-purple-400">+12.0 VGT</div>
-                        <div className="text-xs text-slate-500">8h ago</div>
-                      </div>
-                    </motion.div>
-                  </div>
-                </motion.div>
+              {/* Recent activity */}
+              <div className="space-y-2 text-xs text-slate-200">
+                <div className="text-[11px] uppercase tracking-wide text-slate-400">
+                  Recent activity
+                </div>
+                <ActivityRow
+                  label="Hazard validated"
+                  meta="Pothole • Mumbai"
+                  amount="+15.5 VGT"
+                  tone="emerald"
+                />
+                <ActivityRow
+                  label="V2X contribution"
+                  meta="Network consensus"
+                  amount="+8.2 VGT"
+                  tone="cyan"
+                />
+                <ActivityRow
+                  label="Data contribution"
+                  meta="25 km coverage"
+                  amount="+12.0 VGT"
+                  tone="violet"
+                />
               </div>
             </div>
 
-            {/* Stats chips overlay */}
-            <div className="pointer-events-none absolute left-4 top-4 grid gap-2">
-              <motion.div
-                initial={{ opacity: 0, x: -10 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.5 }}
-                whileHover={{ scale: 1.05 }}
-                className="inline-flex items-center gap-2 rounded-full bg-black/60 px-3 py-1.5 text-xs text-white/90 backdrop-blur-lg ring-1 ring-white/10"
+            <div className="mt-5 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-400 light:text-slate-600">
+              <span>Rewards tracked on‑chain. Transparent distribution.</span>
+              <Link
+                href="/pricing"
+                className="inline-flex items-center gap-1 text-xs font-semibold text-cyan-400 hover:text-cyan-300 light:text-blue-600 light:hover:text-blue-500"
               >
-                Balance <span className="font-mono font-semibold">12,186.35 VGT</span>
-              </motion.div>
-              <motion.div
-                initial={{ opacity: 0, x: -10 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.6 }}
-                whileHover={{ scale: 1.05 }}
-                className="inline-flex items-center gap-2 rounded-full bg-emerald-500/20 px-3 py-1.5 text-xs text-emerald-200 backdrop-blur-lg ring-1 ring-emerald-500/30"
-              >
-                +1,320 <span className="text-emerald-300 font-semibold">+2.6%</span>
-              </motion.div>
-            </div>
-          </div>
-
-          {/* CTA row under preview */}
-          <motion.div
-            className="mt-6 flex flex-wrap items-center justify-between gap-3"
-            initial={{ opacity: 0, y: 10 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.9 }}
-          >
-            <motion.div
-              className="text-sm text-slate-400"
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              viewport={{ once: true }}
-              transition={{ delay: 1.0 }}
-            >
-              Rewards tracked on-chain • Transparent distribution
-            </motion.div>
-            <div className="flex items-center gap-2">
-              <motion.div
-                {...springTap}
-                initial={{ opacity: 0, scale: 0.9 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ delay: 1.1 }}
-              >
-                <Link
-                  href="/pricing"
-                  className="inline-flex items-center gap-1.5 rounded-full border border-slate-700 bg-slate-900/50 px-8 py-3.5 text-sm font-semibold text-white transition-all hover:border-slate-600 hover:bg-slate-800/50 light:border-slate-300 light:bg-white light:text-slate-900 light:hover:border-slate-400 light:hover:bg-slate-50"
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <circle cx="12" cy="12" r="10" />
-                    <path d="M12 6v6l4 2" />
-                  </svg>
-                  Pricing
-                </Link>
-              </motion.div>
-              <motion.div
-                {...springTap}
-                initial={{ opacity: 0, scale: 0.9 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ delay: 1.2 }}
-              >
-                <Link
-                  href="/auth/signup"
-                  className="inline-flex items-center gap-1.5 rounded-full border border-slate-600 bg-white px-8 py-3.5 text-sm font-semibold text-slate-900 shadow-lg transition-all hover:bg-slate-100 light:border-slate-300 light:bg-slate-900 light:text-white light:hover:bg-slate-800"
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-                    <circle cx="9" cy="7" r="4" />
-                    <line x1="19" y1="8" x2="19" y2="14" />
-                    <line x1="22" y1="11" x2="16" y2="11" />
-                  </svg>
-                  Start Earning
-                </Link>
-              </motion.div>
+                View pricing →
+              </Link>
             </div>
           </motion.div>
-
         </div>
       </div>
     </section>
+  );
+}
+
+function ActivityRow({
+  label,
+  meta,
+  amount,
+  tone,
+}: {
+  label: string;
+  meta: string;
+  amount: string;
+  tone: "emerald" | "cyan" | "violet";
+}) {
+  const toneMap: Record<typeof tone, { bg: string; text: string }> = {
+    emerald: {
+      bg: "bg-emerald-500/20",
+      text: "text-emerald-300",
+    } as any,
+    cyan: {
+      bg: "bg-cyan-500/20",
+      text: "text-cyan-300",
+    } as any,
+    violet: {
+      bg: "bg-violet-500/20",
+      text: "text-violet-300",
+    } as any,
+  } as any;
+
+  const { bg, text } = toneMap[tone];
+
+  return (
+    <div className="flex items-center justify-between rounded-lg bg-black/30 px-3 py-2 light:bg-slate-100/70">
+      <div>
+        <div className="text-[11px] font-medium text-white light:text-slate-900">
+          {label}
+        </div>
+        <div className="text-[11px] text-slate-500 light:text-slate-600">
+          {meta}
+        </div>
+      </div>
+      <div className={`rounded-full px-2 py-1 text-[11px] font-semibold ${bg} ${text}`}>
+        {amount}
+      </div>
+    </div>
   );
 }

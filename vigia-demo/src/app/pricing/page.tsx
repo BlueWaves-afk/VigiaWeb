@@ -1,75 +1,99 @@
-// src/app/pricing/page.tsx
 "use client";
 
 import PageShell from "@/components/PageShell";
 import { motion } from "framer-motion";
+import { Check, ArrowRight } from "lucide-react";
+import Link from "next/link";
 
 const fadeUp = (delay = 0) => ({
-  initial: { opacity: 0, y: 12 },
+  initial: { opacity: 0, y: 20 },
   animate: { opacity: 1, y: 0 },
   transition: { delay, duration: 0.6, ease: "easeOut" as const },
 });
 
-const springTap = {
-  whileHover: { 
-    y: -2, 
-    scale: 1.02, 
-    transition: { 
-      type: "spring" as const, 
-      stiffness: 400, 
-      damping: 25 
-    } 
-  },
-  whileTap: { scale: 0.98, y: 0 },
-};
-
-function StatRow({
-  k,
-  v,
-  sub,
-  delay = 0,
-}: {
-  k: string;
-  v: string;
-  sub?: string;
-  delay?: number;
-}) {
+function Feature({ children }: { children: React.ReactNode }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, x: -10 }}
-      whileInView={{ opacity: 1, x: 0 }}
-      transition={{ delay, duration: 0.4 }}
-      className="flex items-start justify-between py-3 border-b border-white/10 last:border-none group hover:bg-white/5 hover:border-white/20 rounded-lg px-3 -mx-3 transition-all"
-    >
-      <div className="text-slate-300 text-sm group-hover:text-white transition-colors">{k}</div>
-      <div className="text-white text-sm text-right">
-        {v}
-        {sub && <div className="text-xs text-slate-400 group-hover:text-slate-300 transition-colors">{sub}</div>}
-      </div>
-    </motion.div>
+    <li className="flex items-start gap-3 text-sm text-slate-400 light:text-slate-600">
+      <Check className="mt-0.5 h-5 w-5 flex-shrink-0 text-cyan-400 light:text-cyan-600" />
+      <span>{children}</span>
+    </li>
   );
 }
 
-function PricingCard({ 
-  children, 
+function PricingCard({
+  name,
+  price,
+  period,
+  description,
+  features,
+  cta,
   featured = false,
-  delay = 0 
-}: { 
-  children: React.ReactNode; 
+  delay = 0,
+}: {
+  name: string;
+  price: string;
+  period?: string;
+  description: string;
+  features: string[];
+  cta: string;
   featured?: boolean;
   delay?: number;
 }) {
   return (
     <motion.div
       {...fadeUp(delay)}
-      whileHover={{ y: -4, scale: 1.02 }}
-      className={`rounded-2xl border backdrop-blur-lg p-6 transition-all ${
-        featured 
-          ? "border-cyan-400/30 bg-gradient-to-br from-cyan-500/10 to-blue-500/10 ring-1 ring-cyan-400/20 shadow-xl shadow-cyan-500/10" 
-          : "border-white/10 bg-gradient-to-br from-slate-800/50 to-slate-900/70 hover:border-white/20 hover:shadow-lg"
+      className={`relative overflow-hidden rounded-2xl border p-8 transition-all hover:border-slate-700 light:hover:border-slate-300 ${
+        featured
+          ? "border-cyan-500 bg-slate-900 shadow-2xl shadow-cyan-500/10 light:border-blue-500 light:bg-white light:shadow-blue-500/10"
+          : "border-slate-800 bg-slate-950 light:border-slate-200 light:bg-white"
       }`}
     >
-      {children}
+      {featured && (
+        <div className="absolute right-8 top-8">
+          <span className="rounded-full bg-cyan-500 px-3 py-1 text-xs font-semibold text-white light:bg-blue-600">
+            Popular
+          </span>
+        </div>
+      )}
+
+      <div className="mb-8">
+        <h3 className="mb-2 text-lg font-semibold text-white light:text-slate-900">
+          {name}
+        </h3>
+        <p className="text-sm text-slate-400 light:text-slate-600">
+          {description}
+        </p>
+      </div>
+
+      <div className="mb-8">
+        <div className="flex items-baseline gap-2">
+          <span className="text-5xl font-semibold text-white light:text-slate-900">
+            {price}
+          </span>
+          {period && (
+            <span className="text-slate-400 light:text-slate-600">
+              {period}
+            </span>
+          )}
+        </div>
+      </div>
+
+      <ul className="mb-8 space-y-3">
+        {features.map((feature, i) => (
+          <Feature key={i}>{feature}</Feature>
+        ))}
+      </ul>
+
+      <Link
+        href="/auth/signup"
+        className={`block w-full rounded-full py-3 text-center text-sm font-semibold transition-all ${
+          featured
+            ? "bg-white text-slate-900 hover:bg-slate-100 light:bg-slate-900 light:text-white light:hover:bg-slate-800"
+            : "border border-slate-700 bg-slate-900 text-white hover:bg-slate-800 light:border-slate-300 light:bg-white light:text-slate-900 light:hover:bg-slate-50"
+        }`}
+      >
+        {cta}
+      </Link>
     </motion.div>
   );
 }
@@ -78,349 +102,208 @@ export default function PricingPage() {
   return (
     <PageShell
       title="Pricing"
-      subtitle="Transparent, DePIN-aligned pricing. Contributors earn VGT. Builders buy Data Credits (DC) to consume verified hazard data & APIs."
+      subtitle="Transparent pricing for road intelligence. Contributors earn VGT. Developers buy Data Credits to consume verified hazard data."
     >
-      {/* Toggle note */}
+      {/* Hero Section */}
       <motion.div
         {...fadeUp(0)}
-        className="rounded-2xl border border-white/10 bg-gradient-to-br from-slate-800/50 to-slate-900/70 p-4 text-sm text-slate-300 backdrop-blur-lg"
+        className="mb-16 text-center"
       >
-        Demo pricing for hackathon/judge review. Numbers are adjustable via
-        Supabase (tables: <code className="text-cyan-300">pricing</code>, <code className="text-cyan-300">wallets</code>,
-        <code className="text-cyan-300">tx_ledger</code>).
+        <h1 className="mb-6 text-5xl font-semibold text-white md:text-6xl light:text-slate-900">
+          Simple, transparent pricing
+        </h1>
+        <p className="mx-auto max-w-2xl text-lg text-slate-400 light:text-slate-600">
+          Pay for what you use. No hidden fees, no surprises. Start free and scale as you grow.
+        </p>
       </motion.div>
 
-      {/* Tiers */}
-      <div className="mt-8 grid gap-6 md:grid-cols-3">
-        {/* Contributor */}
-        <PricingCard delay={0.1}>
-          <div className="text-slate-300 text-sm mb-2">For drivers & cameras</div>
-          <h3 className="text-2xl text-white font-semibold">Contributor</h3>
-          <div className="mt-4 text-4xl text-emerald-300 font-semibold">
-            Earn VGT
-          </div>
-          <div className="text-sm text-slate-400">per validated data unit</div>
+      {/* Pricing Cards */}
+      <div className="mb-16 grid gap-8 md:grid-cols-3">
+        <PricingCard
+          name="Contributor"
+          price="Earn VGT"
+          description="For drivers and camera operators"
+          features={[
+            "Earn tokens for validated hazard data",
+            "Multipliers for high-quality contributions",
+            "DBSCAN validation boosts payouts",
+            "Optional staking for reputation",
+          ]}
+          cta="Start Contributing"
+          delay={0.1}
+        />
 
-          <ul className="mt-6 space-y-3 text-sm text-slate-300">
-            <li className="flex items-start gap-2">
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 mt-1.5 flex-shrink-0" />
-              Earn on-device detections + GPS traces
-            </li>
-            <li className="flex items-start gap-2">
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 mt-1.5 flex-shrink-0" />
-              Extra for high-confidence / rare hazards
-            </li>
-            <li className="flex items-start gap-2">
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 mt-1.5 flex-shrink-0" />
-              Validation boosts via oracles (DBSCAN, QoS)
-            </li>
-            <li className="flex items-start gap-2">
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 mt-1.5 flex-shrink-0" />
-              Slashing for spam/low integrity
-            </li>
-          </ul>
+        <PricingCard
+          name="Developer"
+          price="$99"
+          period="/month"
+          description="For apps and API integrations"
+          features={[
+            "1M Data Credits included",
+            "REST & WebSocket hazard streams",
+            "10M map tile requests/month",
+            "100k replay queries/month",
+            "500k V2X relay messages/month",
+          ]}
+          cta="Start Building"
+          featured
+          delay={0.15}
+        />
 
-          <div className="mt-6 text-xs text-slate-400 border-t border-white/10 pt-4">
-            Payout split (demo): 70% to Contributor, 20% to Validators, 10% to Protocol.
-          </div>
-        </PricingCard>
-
-        {/* Developer */}
-        <PricingCard featured delay={0.15}>
-          <div className="text-slate-300 text-sm mb-2">For apps & APIs</div>
-          <h3 className="text-2xl text-white font-semibold">Developer</h3>
-
-          <div className="mt-4 flex items-end gap-2">
-            <div className="text-4xl text-white font-semibold">$99</div>
-            <div className="text-slate-300">/ mo</div>
-          </div>
-          <div className="text-sm text-slate-400">includes 1M DC (Data Credits)</div>
-
-          <ul className="mt-6 space-y-3 text-sm text-slate-300">
-            <li className="flex items-start gap-2">
-              <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 mt-1.5 flex-shrink-0" />
-              REST/WebSocket hazard stream
-            </li>
-            <li className="flex items-start gap-2">
-              <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 mt-1.5 flex-shrink-0" />
-              10M map tile requests / mo
-            </li>
-            <li className="flex items-start gap-2">
-              <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 mt-1.5 flex-shrink-0" />
-              100k replay queries / mo
-            </li>
-            <li className="flex items-start gap-2">
-              <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 mt-1.5 flex-shrink-0" />
-              V2X relay: first 500k msgs / mo
-            </li>
-          </ul>
-
-          <div className="mt-6 text-xs text-slate-400 border-t border-white/10 pt-4">
-            Overages (demo): $0.80 per +1M DC, $1.5 per +1M tiles,
-            $0.50 per +100k V2X msgs.
-          </div>
-        </PricingCard>
-
-        {/* Enterprise */}
-        <PricingCard delay={0.2}>
-          <div className="text-slate-300 text-sm mb-2">For fleets & cities</div>
-          <h3 className="text-2xl text-white font-semibold">Enterprise</h3>
-
-          <div className="mt-4 text-4xl text-white font-semibold">Custom</div>
-          <div className="text-sm text-slate-400">SLAs, private tenancy, SSO</div>
-
-          <ul className="mt-6 space-y-3 text-sm text-slate-300">
-            <li className="flex items-start gap-2">
-              <div className="w-1.5 h-1.5 rounded-full bg-purple-400 mt-1.5 flex-shrink-0" />
-              Dedicated ingest & validators
-            </li>
-            <li className="flex items-start gap-2">
-              <div className="w-1.5 h-1.5 rounded-full bg-purple-400 mt-1.5 flex-shrink-0" />
-              Private geofences & retention policies
-            </li>
-            <li className="flex items-start gap-2">
-              <div className="w-1.5 h-1.5 rounded-full bg-purple-400 mt-1.5 flex-shrink-0" />
-              Custom tokens/DC treasury & on-prem bridges
-            </li>
-            <li className="flex items-start gap-2">
-              <div className="w-1.5 h-1.5 rounded-full bg-purple-400 mt-1.5 flex-shrink-0" />
-              Priority support & training
-            </li>
-          </ul>
-
-          <div className="mt-6 text-xs text-slate-400 border-t border-white/10 pt-4">
-            Includes co-branded marketplace & revenue shares.
-          </div>
-        </PricingCard>
+        <PricingCard
+          name="Enterprise"
+          price="Custom"
+          description="For fleets and cities"
+          features={[
+            "Dedicated infrastructure",
+            "Custom SLAs and retention",
+            "Private cloud deployment",
+            "Priority support",
+            "Revenue sharing options",
+          ]}
+          cta="Contact Sales"
+          delay={0.2}
+        />
       </div>
 
-      {/* DePIN economics */}
-      <div className="mt-8 grid gap-6 md:grid-cols-2">
-        <motion.div
-          {...fadeUp(0.25)}
-          className="rounded-2xl border border-white/10 bg-gradient-to-br from-slate-800/50 to-slate-900/70 p-6 backdrop-blur-lg"
-        >
-          <div className="text-white text-sm mb-4 font-semibold">How value flows (demo)</div>
-          <div className="text-slate-300 text-sm leading-6 space-y-4">
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.3 }}
-              className="flex items-start gap-3"
-            >
-              <div className="w-2 h-2 rounded-full bg-cyan-400 mt-2 flex-shrink-0" />
-              <span>
-                <span className="text-cyan-300 font-medium">Developers</span> buy{" "}
-                <strong>Data Credits (DC)</strong> with fiat/crypto.
-              </span>
-            </motion.div>
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.4 }}
-              className="flex items-start gap-3"
-            >
-              <div className="w-2 h-2 rounded-full bg-cyan-400 mt-2 flex-shrink-0" />
-              <span>
-                API usage <em>burns</em> DC → creates a revenue pool for the block/epoch.
-              </span>
-            </motion.div>
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.5 }}
-              className="flex items-start gap-3"
-            >
-              <div className="w-2 h-2 rounded-full bg-cyan-400 mt-2 flex-shrink-0" />
-              <span>
-                Pool splits: <strong className="text-emerald-300">70%</strong> Contributors,{" "}
-                <strong className="text-amber-300">20%</strong> Validators/Oracles, <strong className="text-purple-300">10%</strong> Protocol/Treasury.
-              </span>
-            </motion.div>
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.6 }}
-              className="flex items-start gap-3"
-            >
-              <div className="w-2 h-2 rounded-full bg-cyan-400 mt-2 flex-shrink-0" />
-              <span>
-                Rewards paid in <strong className="text-emerald-300">VGT</strong> (minted against DC burn), with optional vesting.
-              </span>
-            </motion.div>
-          </div>
-        </motion.div>
-
-        <motion.div
-          {...fadeUp(0.3)}
-          className="rounded-2xl border border-white/10 bg-gradient-to-br from-slate-800/50 to-slate-900/70 p-6 backdrop-blur-lg"
-        >
-          <div className="text-white text-sm mb-4 font-semibold">Unit costs (suggested)</div>
-          <div className="space-y-1">
-            <StatRow
-              k="Hazard read (stream/replay)"
-              v="1 DC / event"
-              sub="Includes geo, type, severity, device anonymized hash"
-              delay={0.1}
-            />
-            <StatRow
-              k="Map tile request"
-              v="0.05 DC / tile"
-              sub="Raster/Vector CDN tile"
-              delay={0.15}
-            />
-            <StatRow
-              k="V2X relay message"
-              v="0.1 DC / msg"
-              sub="Signed, rate-limited"
-              delay={0.2}
-            />
-            <StatRow
-              k="Batch export"
-              v="1000 DC / GB"
-              sub="S3-compatible bundle"
-              delay={0.25}
-            />
-            <StatRow
-              k="Model inference (cloud)"
-              v="variable"
-              sub="Pass-through at cost + small margin"
-              delay={0.3}
-            />
-          </div>
-        </motion.div>
-      </div>
-
-      {/* Marketplace fees */}
-      <div className="mt-8 grid gap-6 md:grid-cols-3">
-        <motion.div
-          {...fadeUp(0.35)}
-          className="rounded-2xl border border-white/10 bg-gradient-to-br from-slate-800/50 to-slate-900/70 p-6 backdrop-blur-lg text-center"
-        >
-          <div className="text-slate-300 text-sm mb-2">Protocol fee</div>
-          <div className="text-4xl text-purple-300 font-semibold">10%</div>
-          <div className="mt-3 text-sm text-slate-300">
-            From burned-DC pool. Funds ops, security bounties, & R&D.
-          </div>
-        </motion.div>
-        <motion.div
-          {...fadeUp(0.4)}
-          className="rounded-2xl border border-white/10 bg-gradient-to-br from-slate-800/50 to-slate-900/70 p-6 backdrop-blur-lg text-center"
-        >
-          <div className="text-slate-300 text-sm mb-2">Validator pool</div>
-          <div className="text-4xl text-amber-300 font-semibold">20%</div>
-          <div className="mt-3 text-sm text-slate-300">
-            DBSCAN/oracle nodes, triangulation, QoS audits, dispute resolution.
-          </div>
-        </motion.div>
-        <motion.div
-          {...fadeUp(0.45)}
-          className="rounded-2xl border border-white/10 bg-gradient-to-br from-slate-800/50 to-slate-900/70 p-6 backdrop-blur-lg text-center"
-        >
-          <div className="text-slate-300 text-sm mb-2">Contributor rewards</div>
-          <div className="text-4xl text-emerald-300 font-semibold">70%</div>
-          <div className="mt-3 text-sm text-slate-300">
-            Weighted by confidence, novelty, coverage, & device reputation.
-          </div>
-        </motion.div>
-      </div>
-
-      {/* Example calculations */}
+      {/* Value Flow Explanation */}
       <motion.div
-        {...fadeUp(0.5)}
-        className="mt-8 rounded-2xl border border-white/10 bg-gradient-to-br from-slate-800/50 to-slate-900/70 p-6 backdrop-blur-lg"
+        {...fadeUp(0.3)}
+        className="mb-16 rounded-2xl border border-slate-800 bg-slate-950 p-8 light:border-slate-200 light:bg-white"
       >
-        <div className="text-white text-sm mb-4 font-semibold">Worked examples</div>
-
-        <div className="grid gap-6 md:grid-cols-3 text-sm">
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.55 }}
-            className="rounded-xl bg-white/5 p-4 border border-white/10 hover:border-white/20 transition-all"
-          >
-            <div className="text-slate-300 mb-2">App using 5M events / mo</div>
-            <div className="text-white">
-              Needs <span className="font-semibold text-cyan-300">5M DC</span>. Dev plan (1M DC) +{" "}
-              4M overage @ $0.80/M ⇒{" "}
-              <span className="font-semibold text-emerald-300">$99 + $3.20 = $102.20</span>.
-            </div>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6 }}
-            className="rounded-xl bg-white/5 p-4 border border-white/10 hover:border-white/20 transition-all"
-          >
-            <div className="text-slate-300 mb-2">Pool distribution (5M DC)</div>
-            <div className="text-white">
-              Burn creates pool. Split: <strong className="text-emerald-300">3.5M</strong> DC → Contributors,{" "}
-              <strong className="text-amber-300">1.0M</strong> → Validators, <strong className="text-purple-300">0.5M</strong> → Protocol.
-            </div>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.65 }}
-            className="rounded-xl bg-white/5 p-4 border border-white/10 hover:border-white/20 transition-all"
-          >
-            <div className="text-slate-300 mb-2">Contributor device (demo)</div>
-            <div className="text-white">
-              12k validated events in epoch with 1.5× quality multiplier ⇒
-              proportional share ≈ <strong className="text-emerald-300">18k "DC-equiv"</strong> paid as{" "}
-              <strong className="text-emerald-300">VGT</strong>.
-            </div>
-          </motion.div>
+        <h2 className="mb-6 text-2xl font-semibold text-white light:text-slate-900">
+          How value flows
+        </h2>
+        <div className="grid gap-6 md:grid-cols-2">
+          <div>
+            <h3 className="mb-3 text-lg font-semibold text-cyan-400 light:text-cyan-600">
+              Supply Side
+            </h3>
+            <ul className="space-y-3">
+              <Feature>Contributors collect road hazard data</Feature>
+              <Feature>DBSCAN validates and deduplicates reports</Feature>
+              <Feature>Validated data earns VGT tokens</Feature>
+              <Feature>70% of revenue pool goes to contributors</Feature>
+            </ul>
+          </div>
+          <div>
+            <h3 className="mb-3 text-lg font-semibold text-cyan-400 light:text-cyan-600">
+              Demand Side
+            </h3>
+            <ul className="space-y-3">
+              <Feature>Developers buy Data Credits with fiat/crypto</Feature>
+              <Feature>API usage burns Data Credits</Feature>
+              <Feature>Burned credits fund the reward pool</Feature>
+              <Feature>Creates sustainable network economics</Feature>
+            </ul>
+          </div>
         </div>
       </motion.div>
 
-      {/* FAQs */}
+      {/* Token Economics */}
       <motion.div
-        {...fadeUp(0.7)}
-        className="mt-8 rounded-2xl border border-white/10 bg-gradient-to-br from-slate-800/50 to-slate-900/70 p-6 backdrop-blur-lg"
+        {...fadeUp(0.4)}
+        className="mb-16 grid gap-6 md:grid-cols-3"
       >
-        <div className="text-white text-sm mb-4 font-semibold">FAQ (quick)</div>
-        <ul className="space-y-4 text-sm">
-          <motion.li
-            initial={{ opacity: 0, x: -10 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.75 }}
-            className="text-slate-300"
+        <div className="rounded-2xl border border-slate-800 bg-slate-950 p-6 text-center light:border-slate-200 light:bg-white">
+          <div className="mb-2 text-sm text-slate-400 light:text-slate-600">
+            Contributors
+          </div>
+          <div className="mb-4 text-4xl font-semibold text-emerald-400 light:text-emerald-600">
+            70%
+          </div>
+          <p className="text-sm text-slate-400 light:text-slate-600">
+            Weighted by confidence, novelty, and device reputation
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-slate-800 bg-slate-950 p-6 text-center light:border-slate-200 light:bg-white">
+          <div className="mb-2 text-sm text-slate-400 light:text-slate-600">
+            Validators
+          </div>
+          <div className="mb-4 text-4xl font-semibold text-amber-400 light:text-amber-600">
+            20%
+          </div>
+          <p className="text-sm text-slate-400 light:text-slate-600">
+            DBSCAN nodes, oracles, and dispute resolution
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-slate-800 bg-slate-950 p-6 text-center light:border-slate-200 light:bg-white">
+          <div className="mb-2 text-sm text-slate-400 light:text-slate-600">
+            Protocol
+          </div>
+          <div className="mb-4 text-4xl font-semibold text-purple-400 light:text-purple-600">
+            10%
+          </div>
+          <p className="text-sm text-slate-400 light:text-slate-600">
+            Operations, security, and R&D
+          </p>
+        </div>
+      </motion.div>
+
+      {/* FAQ */}
+      <motion.div
+        {...fadeUp(0.5)}
+        className="rounded-2xl border border-slate-800 bg-slate-950 p-8 light:border-slate-200 light:bg-white"
+      >
+        <h2 className="mb-6 text-2xl font-semibold text-white light:text-slate-900">
+          Frequently asked questions
+        </h2>
+        <div className="space-y-6">
+          <div>
+            <h3 className="mb-2 font-semibold text-white light:text-slate-900">
+              Why Data Credits and VGT tokens?
+            </h3>
+            <p className="text-sm text-slate-400 light:text-slate-600">
+              Data Credits give predictable fiat pricing for developers. VGT aligns incentives and rewards supply-side growth, creating sustainable network economics.
+            </p>
+          </div>
+          <div>
+            <h3 className="mb-2 font-semibold text-white light:text-slate-900">
+              Can I run validator nodes?
+            </h3>
+            <p className="text-sm text-slate-400 light:text-slate-600">
+              Yes. DBSCAN and oracle nodes earn 20% of the reward pool based on quality of service and uptime.
+            </p>
+          </div>
+          <div>
+            <h3 className="mb-2 font-semibold text-white light:text-slate-900">
+              What about blockchain gas fees?
+            </h3>
+            <p className="text-sm text-slate-400 light:text-slate-600">
+              Gas is abstracted. Data Credit burns and settlements are batched, with optional L2 bridge for advanced users.
+            </p>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* CTA */}
+      <motion.div
+        {...fadeUp(0.6)}
+        className="mt-16 rounded-2xl border border-cyan-500 bg-gradient-to-br from-cyan-500/10 to-blue-500/10 p-8 text-center light:border-blue-500 light:from-blue-500/10 light:to-cyan-500/10"
+      >
+        <h2 className="mb-4 text-3xl font-semibold text-white light:text-slate-900">
+          Ready to get started?
+        </h2>
+        <p className="mb-6 text-lg text-slate-300 light:text-slate-600">
+          Join the network and start building or contributing today.
+        </p>
+        <div className="flex flex-wrap items-center justify-center gap-4">
+          <Link
+            href="/auth/signup"
+            className="inline-flex items-center gap-2 rounded-full bg-white px-8 py-3 font-semibold text-slate-900 transition-all hover:bg-slate-100 light:bg-slate-900 light:text-white light:hover:bg-slate-800"
           >
-            <span className="text-cyan-300 font-medium">Why DC + VGT?</span>{" "}
-            DC gives predictable pricing in fiat; VGT aligns incentives and
-            rewards supply-side growth.
-          </motion.li>
-          <motion.li
-            initial={{ opacity: 0, x: -10 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.8 }}
-            className="text-slate-300"
+            Sign Up Free
+            <ArrowRight className="h-5 w-5" />
+          </Link>
+          <Link
+            href="/docs"
+            className="inline-flex items-center gap-2 rounded-full border border-slate-700 px-8 py-3 font-semibold text-white transition-all hover:bg-slate-900 light:border-slate-300 light:text-slate-900 light:hover:bg-slate-50"
           >
-            <span className="text-cyan-300 font-medium">Is there device staking?</span>{" "}
-            Yes (demo): small VGT stake to publish; slashing on spam/abuse.
-          </motion.li>
-          <motion.li
-            initial={{ opacity: 0, x: -10 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.85 }}
-            className="text-slate-300"
-          >
-            <span className="text-cyan-300 font-medium">Can I run validators?</span>{" "}
-            Yes—DBSCAN/oracle nodes earn 20% of the pool according to QoS.
-          </motion.li>
-          <motion.li
-            initial={{ opacity: 0, x: -10 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.9 }}
-            className="text-slate-300"
-          >
-            <span className="text-cyan-300 font-medium">On-chain gas?</span>{" "}
-            Abstracted; DC burn/settlement batched. Optional L2 bridge later.
-          </motion.li>
-        </ul>
+            Read Documentation
+          </Link>
+        </div>
       </motion.div>
     </PageShell>
   );

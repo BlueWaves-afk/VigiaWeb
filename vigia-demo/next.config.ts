@@ -1,32 +1,12 @@
-/** @type {import('next').NextConfig} */
-interface TurboRules {
-  [key: string]: {
-    type: string;
-  };
-}
-
-interface TurboConfig {
-  rules: TurboRules;
-}
-
-interface ExperimentalConfig {
-  turbo: TurboConfig;
-}
-
-interface WebpackConfig {
-  resolve: {
-    fallback?: {
-      [key: string]: boolean;
-    };
-  };
-}
-
-interface NextConfig {
-  webpack: (config: WebpackConfig) => WebpackConfig;
-  experimental: ExperimentalConfig;
-}
+import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  reactStrictMode: true,
+
+  // Explicitly acknowledge Turbopack (Next.js 16 requirement)
+  turbopack: {},
+
+  // Needed for browser-based inference (onnxruntime / wasm)
   webpack: (config) => {
     config.resolve.fallback = {
       ...config.resolve.fallback,
@@ -35,15 +15,6 @@ const nextConfig: NextConfig = {
     };
     return config;
   },
-  experimental: {
-    turbo: {
-      rules: {
-        '*.wasm': {
-          type: 'asset',
-        },
-      },
-    },
-  },
 };
 
-module.exports = nextConfig;
+export default nextConfig;

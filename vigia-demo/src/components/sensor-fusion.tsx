@@ -1,11 +1,18 @@
-// src/app/sandbox/sensor-fusion/page.tsx
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import PageShell from "@/components/PageShell";
-import { Area, AreaChart, ResponsiveContainer, Tooltip as RTooltip, XAxis, YAxis } from "recharts";
+import {
+  Area,
+  AreaChart,
+  ResponsiveContainer,
+  Tooltip as RTooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import { AnimatePresence, motion } from "framer-motion";
 
+// --- Types and helpers (unchanged) ---
 type Vec = { x: number; y: number };
 type Node = { id: string; p: Vec };
 type Edge = { id: string; a: string; b: string; ctrl?: Vec; baseCost: number; closed?: boolean; hazards: Hazard[] };
@@ -50,6 +57,7 @@ type HazardEvidence = {
   lastFusionAction?: number;
 };
 
+// --- Constants (unchanged) ---
 const WORLD = { w: 1120, h: 640 };
 const RADAR = 140;
 const TICK_MS = 28;
@@ -58,12 +66,12 @@ const ACTION_TTL = 2800;
 const FEED_MAX = 140;
 const IMU_WINDOW_MS = 2000;
 const VISION_BUFFER_MS = 2000;
-const FUSION_INTERVAL_MS = 125; // ~8 Hz refresh
+const FUSION_INTERVAL_MS = 125;
 const FUSION_PROB_THRESHOLD = 0.7;
 const FUSION_SEV_THRESHOLD = 0.4;
 const DEFAULT_IMU_FEATURES: ImuFeature = { ts: 0, peak: 0, impulse: 0, width50: 0 };
 const DEFAULT_FUSION_HUD: FusionResult = { hazardProb: 0, severity: 0, source: "none" };
-const EXPLAINER_SLIDES: Array<{ title: string; body: string; caption: string }> = [
+const EXPLAINER_SLIDES = [
   {
     title: "Looping the city graph",
     body: "Vehicles resample the street graph, weigh hazards per edge, and chase the lowest cost route while new road threats appear.",
@@ -80,7 +88,6 @@ const EXPLAINER_SLIDES: Array<{ title: string; body: string; caption: string }> 
     caption: "A richer hazard map drives better planning and preventive maintenance.",
   },
 ];
-
 const HAZARD_META: Record<
   HazardKind,
   { label: string; color: string; pulseWidth: number; pulseAmp: number; audioEnergy: number; audioScreech: number }
@@ -93,18 +100,15 @@ const HAZARD_META: Record<
 const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
 const rand = (min: number, max: number) => min + Math.random() * (max - min);
 const choice = <T,>(arr: T[]) => arr[Math.floor(Math.random() * arr.length)];
-const timeTag = () =>
-  `[${new Date().toLocaleTimeString([], { hour12: false, hour: "2-digit", minute: "2-digit", second: "2-digit" })}]`;
+const timeTag = () => `[${new Date().toLocaleTimeString([], { hour12: false, hour: "2-digit", minute: "2-digit", second: "2-digit" })}]`;
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 const lerpP = (a: Vec, b: Vec, t: number): Vec => ({ x: lerp(a.x, b.x, t), y: lerp(a.y, b.y, t) });
 const quadBezier = (a: Vec, c: Vec, b: Vec, t: number): Vec => {
   const u = 1 - t;
-  return {
-    x: u * u * a.x + 2 * u * t * c.x + t * t * b.x,
-    y: u * u * a.y + 2 * u * t * c.y + t * t * b.y,
-  };
+  return { x: u * u * a.x + 2 * u * t * c.x + t * t * b.x, y: u * u * a.y + 2 * u * t * c.y + t * t * b.y };
 };
 
+// alpha-beta helpers
 function alphaBetaInit(alpha: number, beta: number): AlphaBetaState {
   return { alpha, beta, estimate: 0, rate: 0, lastTs: typeof performance !== "undefined" ? performance.now() : 0 };
 }
@@ -118,10 +122,11 @@ function alphaBetaStep(state: AlphaBetaState, measurement: number, now: number) 
   return state.estimate;
 }
 
+// IMU features
 function computeImuFeatures(samples: { t: number; raw: number }[]): ImuFeature {
   const ts = typeof performance !== "undefined" ? performance.now() : Date.now();
   if (samples.length < 2) return { ts, peak: 0, impulse: 0, width50: 0 };
-  const peak = samples.reduce((max, s) => Math.max(max, Math.abs(s.raw)), 0);
+  const peak = samples.reduce((m, s) => Math.max(m, Math.abs(s.raw)), 0);
   if (peak < 0.01) return { ts, peak: 0, impulse: 0, width50: 0 };
   let impulse = 0;
   for (let i = 1; i < samples.length; i++) {
@@ -143,6 +148,7 @@ function computeImuFeatures(samples: { t: number; raw: number }[]): ImuFeature {
   return { ts, peak, impulse, width50: width };
 }
 
+// Graph
 const NODES: Node[] = [
   { id: "A", p: { x: 120, y: 520 } },
   { id: "B", p: { x: 260, y: 520 } },
@@ -157,7 +163,6 @@ const NODES: Node[] = [
   { id: "K", p: { x: 240, y: 280 } },
   { id: "L", p: { x: 140, y: 360 } },
 ];
-
 const EDGES_BASE: Edge[] = [
   { id: "AB", a: "A", b: "B", baseCost: 5, hazards: [] },
   { id: "BC", a: "B", b: "C", baseCost: 6, hazards: [], ctrl: { x: 340, y: 560 } },
@@ -175,6 +180,7 @@ const EDGES_BASE: Edge[] = [
   { id: "CK", a: "C", b: "K", baseCost: 9, hazards: [], ctrl: { x: 340, y: 380 } },
 ];
 
+// Path helpers (unchanged)
 function dijkstra(nodes: Node[], edges: Edge[], start: string, goal: string, slowdownEdges: Set<string> = new Set()) {
   const edgeMap = new Map<string, Edge[]>();
   for (const e of edges) {
@@ -189,7 +195,6 @@ function dijkstra(nodes: Node[], edges: Edge[], start: string, goal: string, slo
   const queue = new Set(nodes.map((n) => n.id));
   nodes.forEach((n) => dist.set(n.id, Infinity));
   dist.set(start, 0);
-
   while (queue.size) {
     let u: string | null = null;
     let best = Infinity;
@@ -209,14 +214,13 @@ function dijkstra(nodes: Node[], edges: Edge[], start: string, goal: string, slo
       let penalty = 0;
       for (const hz of e.hazards) penalty += hz.severity * 4;
       const slow = slowdownEdges.has(e.id) ? e.baseCost * (1 / EDGE_SLOWDOWN - 1) : 0;
-      const alternative = dist.get(u)! + e.baseCost + penalty + slow;
-      if (alternative < dist.get(e.b)!) {
-        dist.set(e.b, alternative);
+      const alt = dist.get(u)! + e.baseCost + penalty + slow;
+      if (alt < dist.get(e.b)!) {
+        dist.set(e.b, alt);
         prev.set(e.b, u);
       }
     }
   }
-
   const path: string[] = [];
   let cur: string | undefined = goal;
   if (prev.get(cur!) === undefined && cur !== start) return [start];
@@ -227,38 +231,30 @@ function dijkstra(nodes: Node[], edges: Edge[], start: string, goal: string, slo
   }
   return path;
 }
-
 function nextHop(start: string, end: string, edges: Edge[], slow: Set<string> = new Set()) {
   return dijkstra(NODES, edges, start, end, slow);
 }
-
 function edgePoint(e: Edge, t: number): Vec {
   const A = NODES.find((n) => n.id === e.a)!.p;
   const B = NODES.find((n) => n.id === e.b)!.p;
   if (e.ctrl) return quadBezier(A, e.ctrl, B, t);
   return lerpP(A, B, t);
 }
-
 function edgePathD(e: Edge) {
   const A = NODES.find((n) => n.id === e.a)!.p;
   const B = NODES.find((n) => n.id === e.b)!.p;
   if (e.ctrl) return `M ${A.x} ${A.y} Q ${e.ctrl.x} ${e.ctrl.y} ${B.x} ${B.y}`;
   return `M ${A.x} ${A.y} L ${B.x} ${B.y}`;
 }
-
 function nodePointFromEdges(v: Vehicle, edges: Edge[]): Vec {
-  const edge = edges.find(
-    (ed) => (ed.a === v.nodeFrom && ed.b === v.nodeTo) || (ed.a === v.nodeTo && ed.b === v.nodeFrom),
-  );
+  const edge = edges.find((ed) => (ed.a === v.nodeFrom && ed.b === v.nodeTo) || (ed.a === v.nodeTo && ed.b === v.nodeFrom));
   if (!edge) return { x: 0, y: 0 };
   const t = v.nodeFrom === edge.a ? v.t : 1 - v.t;
   return edgePoint(edge, t);
 }
-
 function pathCost(path: string[], edges: Edge[], slow: Set<string>): number {
   if (path.length < 2) return 0;
-  const findEdge = (a: string, b: string) =>
-    edges.find((e) => (e.a === a && e.b === b) || (e.a === b && e.b === a));
+  const findEdge = (a: string, b: string) => edges.find((e) => (e.a === a && e.b === b) || (e.a === b && e.b === a));
   let total = 0;
   for (let i = 0; i < path.length - 1; i++) {
     const e = findEdge(path[i], path[i + 1]);
@@ -268,22 +264,10 @@ function pathCost(path: string[], edges: Edge[], slow: Set<string>): number {
   }
   return total;
 }
-
 const lastOf = (route: string[]) => (route.length > 0 ? route[route.length - 1] : "");
-
 function makeVehicle(id: string, color: string, start: string, goal: string, edges: Edge[]): Vehicle {
   const route = nextHop(start, goal, edges);
-  return {
-    id,
-    color,
-    nodeFrom: start,
-    nodeTo: route[1] ?? start,
-    t: 0,
-    speed: 1,
-    radius: RADAR,
-    route,
-    action: "Cruise",
-  };
+  return { id, color, nodeFrom: start, nodeTo: route[1] ?? start, t: 0, speed: 1, radius: RADAR, route, action: "Cruise" };
 }
 function Car({ color = "#38bdf8", rotate = 0 }: { color?: string; rotate?: number }) {
   return (
@@ -295,7 +279,6 @@ function Car({ color = "#38bdf8", rotate = 0 }: { color?: string; rotate?: numbe
     </svg>
   );
 }
-
 function HazardGlyph({ kind }: { kind: HazardKind }) {
   if (kind === "pothole") return <circle r={6} fill="#f97316" />;
   if (kind === "debris") return <rect x={-5} y={-5} width={10} height={10} fill="#eab308" rx={2} />;
@@ -305,13 +288,12 @@ function HazardGlyph({ kind }: { kind: HazardKind }) {
     </svg>
   );
 }
-
 function ToggleChip({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
   return (
     <button
       onClick={onClick}
       className={`rounded-full px-3 py-1.5 text-xs font-semibold tracking-wide transition ${
-        active ? "bg-white text-slate-900 shadow-inner" : "bg-white/5 text-white/70 hover:bg-white/10"
+        active ? "bg-white text-slate-900 shadow-inner" : "bg-white/5 text-white/70 hover:bg-white/10 light:bg-slate-200 light:text-slate-800 light:hover:bg-slate-300"
       }`}
     >
       {label}
@@ -319,6 +301,7 @@ function ToggleChip({ label, active, onClick }: { label: string; active: boolean
   );
 }
 
+// Legend with light variants
 function Legend() {
   const legendItems = [
     {
@@ -380,17 +363,16 @@ function Legend() {
       color: "#fbbf24",
     },
   ];
-
   return (
-    <div className="card-glass p-4">
-      <div className="mb-3 text-sm font-semibold text-white/70">Map Symbols</div>
+    <div className="card-glass p-4 bg-slate-950/80 border-slate-800/60 light:bg-white light:border-slate-200">
+      <div className="mb-3 text-sm font-semibold text-white/70 light:text-slate-800">Map Symbols</div>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {legendItems.map((item, idx) => (
           <div key={idx} className="flex items-center gap-2.5">
-            <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-white/5">
+            <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-white/5 light:bg-slate-100">
               {item.icon}
             </div>
-            <div className="text-xs font-medium text-white/80">{item.label}</div>
+            <div className="text-xs font-medium text-white/80 light:text-slate-800">{item.label}</div>
           </div>
         ))}
       </div>
@@ -398,7 +380,9 @@ function Legend() {
   );
 }
 
+// --- Component ---
 export default function SensorFusionPage() {
+  // state/logic unchanged
   const [isSimulationRunning, setIsSimulationRunning] = useState(false);
   const [edges, setEdges] = useState<Edge[]>(() => EDGES_BASE.map((e) => ({ ...e, hazards: [] })));
   const [vehicles, setVehicles] = useState<Vehicle[]>(() => [
@@ -442,17 +426,12 @@ export default function SensorFusionPage() {
   }, [edges]);
 
   useEffect(() => {
-    if (!isCarouselVisible || carouselLength <= 1) return undefined;
-    const id = window.setInterval(() => {
-      setCarouselIndex((idx) => (idx + 1) % carouselLength);
-    }, 8000);
+    if (!isCarouselVisible || carouselLength <= 1) return;
+    const id = window.setInterval(() => setCarouselIndex((idx) => (idx + 1) % carouselLength), 8000);
     return () => window.clearInterval(id);
   }, [carouselLength, isCarouselVisible]);
 
-  const log = (
-    message: string,
-    type: "hazard" | "vision" | "imu" | "audio" | "fusion" | "vehicle" = "hazard",
-  ) => {
+  const log = (message: string, type: "hazard" | "vision" | "imu" | "audio" | "fusion" | "vehicle" = "hazard") => {
     const badge = {
       hazard: { emoji: "", label: "HAZARD", classes: "bg-orange-950/50 text-orange-400" },
       vision: { emoji: "", label: "VISION", classes: "bg-sky-950/40 text-sky-300" },
@@ -461,7 +440,7 @@ export default function SensorFusionPage() {
       fusion: { emoji: "", label: "FUSION", classes: "bg-emerald-950/50 text-emerald-300" },
       vehicle: { emoji: "", label: "VEHICLE", classes: "bg-emerald-950/50 text-emerald-300" },
     }[type];
-    const entry = `${timeTag()} <span class="px-2 py-0.5 rounded text-xs font-medium ${badge.classes}">${badge.emoji} ${badge.label}</span> ${message}`;
+    const entry = `${timeTag()} <span class="px-2 py-0.5 rounded text-xs font-medium ${badge.classes}">${badge.label}</span> ${message}`;
     setFeed((prev) => [entry, ...prev.slice(0, FEED_MAX - 1)]);
   };
 
@@ -496,11 +475,7 @@ export default function SensorFusionPage() {
     setEdges((prev) =>
       prev.map((edge) =>
         edge.id === e.id
-          ? {
-              ...edge,
-              hazards: [...edge.hazards, hz],
-              closed: hz.kind === "work" ? Math.random() < 0.35 : edge.closed,
-            }
+          ? { ...edge, hazards: [...edge.hazards, hz], closed: hz.kind === "work" ? Math.random() < 0.35 : edge.closed }
           : edge,
       ),
     );
@@ -554,7 +529,6 @@ export default function SensorFusionPage() {
       return next;
     });
   };
-
   const toggleImu = () => {
     setImuEnabled((enabled) => {
       const next = !enabled;
@@ -568,7 +542,6 @@ export default function SensorFusionPage() {
       return next;
     });
   };
-
   const toggleAudio = () => {
     setAudioEnabled((enabled) => {
       const next = !enabled;
@@ -580,14 +553,8 @@ export default function SensorFusionPage() {
     });
   };
 
-  const goPrevSlide = () => {
-    setCarouselIndex((idx) => (idx - 1 + carouselLength) % carouselLength);
-  };
-
-  const goNextSlide = () => {
-    setCarouselIndex((idx) => (idx + 1) % carouselLength);
-  };
-
+  const goPrevSlide = () => setCarouselIndex((idx) => (idx - 1 + carouselLength) % carouselLength);
+  const goNextSlide = () => setCarouselIndex((idx) => (idx + 1) % carouselLength);
   const hideCarousel = () => setIsCarouselVisible(false);
   const showCarousel = () => setIsCarouselVisible(true);
 
@@ -630,6 +597,8 @@ export default function SensorFusionPage() {
     },
     [edges],
   );
+
+  // Main sim loop
   useEffect(() => {
     if (!isSimulationRunning) {
       if (loopRef.current) cancelAnimationFrame(loopRef.current);
@@ -640,15 +609,13 @@ export default function SensorFusionPage() {
       const now = typeof performance !== "undefined" ? performance.now() : Date.now();
       const dt = now - tPrev.current;
       if (dt >= TICK_MS) {
-  dashOffsetRef.current = (dashOffsetRef.current + dt * 0.03) % 16;
-  setDashOffset(dashOffsetRef.current);
+        dashOffsetRef.current = (dashOffsetRef.current + dt * 0.03) % 16;
+        setDashOffset(dashOffsetRef.current);
         setVehicles((prev) =>
           prev.map((v) => {
             const { nodeFrom, nodeTo } = v;
             let { t, speed, actionTTL, action } = v;
-            const edge = edges.find(
-              (ed) => (ed.a === nodeFrom && ed.b === nodeTo) || (ed.a === nodeTo && ed.b === nodeFrom),
-            );
+            const edge = edges.find((ed) => (ed.a === nodeFrom && ed.b === nodeTo) || (ed.a === nodeTo && ed.b === nodeFrom));
             if (!edge) return v;
             if (edge.closed) {
               const newPath = nextHop(nodeFrom, lastOf(v.route), edges);
@@ -680,16 +647,7 @@ export default function SensorFusionPage() {
               if (!nextNode) {
                 const nextGoal = choice(NODES.filter((n) => n.id !== nodeTo)).id;
                 const newPath = nextHop(nodeTo, nextGoal, edges);
-                return {
-                  ...v,
-                  nodeFrom: newPath[0],
-                  nodeTo: newPath[1],
-                  route: newPath,
-                  t: 0,
-                  action,
-                  actionTTL,
-                  speed,
-                };
+                return { ...v, nodeFrom: newPath[0], nodeTo: newPath[1], route: newPath, t: 0, action, actionTTL, speed };
               }
               return { ...v, nodeFrom: nodeTo, nodeTo: nextNode, t: 0, action, actionTTL, speed };
             }
@@ -795,6 +753,8 @@ export default function SensorFusionPage() {
       if (loopRef.current) cancelAnimationFrame(loopRef.current);
     };
   }, [isSimulationRunning, edges, visionEnabled, imuEnabled, audioEnabled, noiseLevel]);
+
+  // IMU update loop
   useEffect(() => {
     if (!isSimulationRunning) return;
     let frame = 0;
@@ -812,13 +772,9 @@ export default function SensorFusionPage() {
           if (age <= pulse.duration) {
             const progress = age / pulse.duration;
             let shape = 0;
-            if (pulse.kind === "pothole") {
-              shape = Math.exp(-Math.pow((progress - 0.35) * 9, 2));
-            } else if (pulse.kind === "work") {
-              shape = Math.sin(Math.PI * progress) ** 2;
-            } else {
-              shape = Math.exp(-Math.pow((progress - 0.5) * 6, 2)) * 0.7;
-            }
+            if (pulse.kind === "pothole") shape = Math.exp(-Math.pow((progress - 0.35) * 9, 2));
+            else if (pulse.kind === "work") shape = Math.sin(Math.PI * progress) ** 2;
+            else shape = Math.exp(-Math.pow((progress - 0.5) * 6, 2)) * 0.7;
             raw += pulse.amplitude * shape;
             pulses.push(pulse);
           }
@@ -844,7 +800,7 @@ export default function SensorFusionPage() {
         }));
         setImuSeries(normalized);
         const feats = computeImuFeatures(window.map((s) => ({ t: s.t, raw: s.raw })));
-  setImuFeaturesState(feats);
+        setImuFeaturesState(feats);
         if (imuOwnerRef.current) {
           const entry = hazardEvidenceRef.current[imuOwnerRef.current];
           if (entry) entry.imu = feats;
@@ -858,6 +814,7 @@ export default function SensorFusionPage() {
     return () => cancelAnimationFrame(frame);
   }, [isSimulationRunning, imuEnabled, noiseLevel]);
 
+  // expire vision
   useEffect(() => {
     if (!isSimulationRunning) return;
     const iv = setInterval(() => {
@@ -871,6 +828,7 @@ export default function SensorFusionPage() {
     return () => clearInterval(iv);
   }, [isSimulationRunning]);
 
+  // fusion logic
   useEffect(() => {
     if (!isSimulationRunning) return;
     const iv = setInterval(() => {
@@ -889,15 +847,18 @@ export default function SensorFusionPage() {
       const imuAge = entry.imu ? now - entry.imu.ts : Infinity;
       const audioAge = entry.audio ? now - entry.audio.ts : Infinity;
 
-      const visionScore = visionEnabled && visionAge < VISION_BUFFER_MS
-        ? clamp((entry.visionConf ?? 0) * (1 - visionAge / VISION_BUFFER_MS) * (1 - noiseLevel * 0.35), 0, 1)
-        : 0;
-      const imuScore = imuEnabled && entry.imu && imuAge < 1500
-        ? clamp(entry.imu.peak * 0.55 + entry.imu.impulse * 0.3 + entry.imu.width50 * 0.35 - noiseLevel * 0.25, 0, 1)
-        : 0;
-      const audioScore = audioEnabled && entry.audio && audioAge < 1500
-        ? clamp(entry.audio.energy * 0.6 + entry.audio.screech * 0.45 - noiseLevel * 0.2, 0, 1)
-        : 0;
+      const visionScore =
+        visionEnabled && visionAge < VISION_BUFFER_MS
+          ? clamp((entry.visionConf ?? 0) * (1 - visionAge / VISION_BUFFER_MS) * (1 - noiseLevel * 0.35), 0, 1)
+          : 0;
+      const imuScore =
+        imuEnabled && entry.imu && imuAge < 1500
+          ? clamp(entry.imu.peak * 0.55 + entry.imu.impulse * 0.3 + entry.imu.width50 * 0.35 - noiseLevel * 0.25, 0, 1)
+          : 0;
+      const audioScore =
+        audioEnabled && entry.audio && audioAge < 1500
+          ? clamp(entry.audio.energy * 0.6 + entry.audio.screech * 0.45 - noiseLevel * 0.2, 0, 1)
+          : 0;
 
       const contributions: Array<{ key: "vision" | "imu" | "audio"; weight: number; value: number }> = [];
       if (visionScore > 0) contributions.push({ key: "vision", weight: 0.5, value: visionScore });
@@ -919,9 +880,7 @@ export default function SensorFusionPage() {
       );
       entry.severityEma = entry.severityEma * 0.72 + severityInstant * 0.28;
 
-      const source = contributions.length
-        ? (contributions.map((c) => c.key).sort().join("+") as FusionSource)
-        : "none";
+      const source = contributions.length ? (contributions.map((c) => c.key).sort().join("+") as FusionSource) : "none";
 
       setFusionHud({
         hazardProb,
@@ -937,7 +896,9 @@ export default function SensorFusionPage() {
           const action = applyFusionMitigation(entry);
           const sensorsUsed = source === "none" ? "baseline" : source;
           log(
-            `FUSION (${sensorsUsed}) ${HAZARD_META[entry.hazard.kind].label} @${entry.edgeId} p=${hazardProb.toFixed(2)} sev=${entry.severityEma.toFixed(2)} → ${action}`,
+            `FUSION (${sensorsUsed}) ${HAZARD_META[entry.hazard.kind].label} @${entry.edgeId} p=${hazardProb.toFixed(
+              2,
+            )} sev=${entry.severityEma.toFixed(2)} → ${action}`,
             "fusion",
           );
         }
@@ -950,15 +911,17 @@ export default function SensorFusionPage() {
   }, [isSimulationRunning, visionEnabled, imuEnabled, audioEnabled, noiseLevel, applyFusionMitigation, resetFusionHud]);
 
   const latestVision = useMemo(() => {
-    if (visionDetections.length === 0) return null;
+    if (!visionDetections.length) return null;
     return visionDetections[visionDetections.length - 1];
   }, [visionDetections]);
+
+  // --- Render ---
   return (
     <PageShell
       title="Multimodal Sensor Fusion"
       subtitle="Simulated perception stack fusing vision hits, IMU pulses, and optional audio for hazard confirmation."
-      bannerSrc="/images/banner.png"
     >
+      {/* Section header (already provided by PageShell) */}
       <motion.div
         className="mb-4 flex flex-wrap items-center gap-2"
         initial={{ opacity: 0, y: -16 }}
@@ -985,7 +948,7 @@ export default function SensorFusionPage() {
         </motion.button>
         <motion.button
           onClick={() => spawnHazard("work")}
-          className="rounded-xl border border-white/10 bg-white/10 px-3 py-2 text-white/80 backdrop-blur hover:bg-white/20 disabled:opacity-50"
+          className="rounded-xl border border-white/10 bg-white/10 px-3 py-2 text-white/80 backdrop-blur hover:bg-white/20 disabled:opacity-50 light:border-slate-200 light:bg-slate-100 light:text-slate-800 light:hover:bg-slate-200"
           whileHover={{ scale: 1.04 }}
           whileTap={{ scale: 0.96 }}
           disabled={!isSimulationRunning}
@@ -994,7 +957,7 @@ export default function SensorFusionPage() {
         </motion.button>
         <motion.button
           onClick={resetNetwork}
-          className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-white/80 hover:bg-white/10 disabled:opacity-50"
+          className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-white/80 hover:bg-white/10 disabled:opacity-50 light:border-slate-200 light:bg-slate-100 light:text-slate-800 light:hover:bg-slate-200"
           whileHover={{ scale: 1.04 }}
           whileTap={{ scale: 0.96 }}
           disabled={!isSimulationRunning}
@@ -1005,7 +968,7 @@ export default function SensorFusionPage() {
 
       <div className="grid gap-6 lg:grid-cols-[minmax(560px,1fr)_340px]">
         <div className="space-y-6">
-          <div className="card-glass relative overflow-hidden p-3">
+          <div className="card-glass relative overflow-hidden p-3 bg-slate-950/80 border-slate-800/60 light:bg-white light:border-slate-200">
             {isCarouselVisible ? (
               <div className="pointer-events-auto absolute inset-x-3 top-3 z-20 max-w-sm">
                 <AnimatePresence mode="wait">
@@ -1015,12 +978,14 @@ export default function SensorFusionPage() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 12 }}
                     transition={{ duration: 0.3 }}
-                    className="rounded-2xl border border-white/10 bg-slate-950/85 p-4 shadow-xl backdrop-blur"
+                    className="rounded-2xl border border-white/10 bg-slate-950/85 p-4 shadow-xl backdrop-blur light:border-slate-200 light:bg-white"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <div className="text-xs uppercase tracking-[0.2em] text-white/50">Sensor Fusion Explainer</div>
-                        <div className="mt-1 text-lg font-semibold text-white">
+                        <div className="text-xs uppercase tracking-[0.2em] text-white/50 light:text-slate-500">
+                          Sensor Fusion Explainer
+                        </div>
+                        <div className="mt-1 text-lg font-semibold text-white light:text-slate-900">
                           {EXPLAINER_SLIDES[carouselIndex].title}
                         </div>
                       </div>
@@ -1028,38 +993,37 @@ export default function SensorFusionPage() {
                         <button
                           type="button"
                           onClick={goPrevSlide}
-                          className="h-7 w-7 rounded-full border border-white/15 bg-white/5 text-xs text-white/80 transition hover:bg-white/15"
-                          aria-label="Previous explainer card"
+                          className="h-7 w-7 rounded-full border border-white/15 bg-white/5 text-xs text-white/80 transition hover:bg-white/15 light:border-slate-200 light:bg-slate-100 light:text-slate-800 light:hover:bg-slate-200"
                         >
                           {"<"}
                         </button>
                         <button
                           type="button"
                           onClick={goNextSlide}
-                          className="h-7 w-7 rounded-full border border-white/15 bg-white/5 text-xs text-white/80 transition hover:bg-white/15"
-                          aria-label="Next explainer card"
+                          className="h-7 w-7 rounded-full border border-white/15 bg-white/5 text-xs text-white/80 transition hover:bg-white/15 light:border-slate-200 light:bg-slate-100 light:text-slate-800 light:hover:bg-slate-200"
                         >
                           {">"}
                         </button>
                         <button
                           type="button"
                           onClick={hideCarousel}
-                          className="ml-1 h-7 w-7 rounded-full border border-white/15 bg-white/5 text-xs font-semibold text-white/70 transition hover:bg-rose-500/60 hover:text-white"
-                          aria-label="Hide explainer cards"
+                          className="ml-1 h-7 w-7 rounded-full border border-white/15 bg-white/5 text-xs font-semibold text-white/70 transition hover:bg-rose-500/60 hover:text-white light:border-slate-200 light:bg-slate-100 light:text-slate-800 light:hover:bg-rose-100"
                         >
                           ×
                         </button>
                       </div>
                     </div>
-                    <p className="mt-3 text-sm text-white/80">{EXPLAINER_SLIDES[carouselIndex].body}</p>
-                    <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-emerald-300/90">
+                    <p className="mt-3 text-sm text-white/80 light:text-slate-700">
+                      {EXPLAINER_SLIDES[carouselIndex].body}
+                    </p>
+                    <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-emerald-300/90 light:text-emerald-600">
                       {EXPLAINER_SLIDES[carouselIndex].caption}
                     </p>
                     <div className="mt-3 flex gap-1">
                       {EXPLAINER_SLIDES.map((slide, idx) => (
                         <span
                           key={slide.title}
-                          className={`h-1.5 flex-1 rounded-full ${idx === carouselIndex ? "bg-emerald-400" : "bg-white/15"}`}
+                          className={`h-1.5 flex-1 rounded-full ${idx === carouselIndex ? "bg-emerald-400" : "bg-white/15 light:bg-slate-200"}`}
                         />
                       ))}
                     </div>
@@ -1070,11 +1034,12 @@ export default function SensorFusionPage() {
               <button
                 type="button"
                 onClick={showCarousel}
-                className="pointer-events-auto absolute left-3 top-3 z-20 rounded-full border border-white/15 bg-slate-950/80 px-4 py-1.5 text-xs font-semibold uppercase tracking-wide text-white/80 transition hover:bg-white/15"
+                className="pointer-events-auto absolute left-3 top-3 z-20 rounded-full border border-white/15 bg-slate-950/80 px-4 py-1.5 text-xs font-semibold uppercase tracking-wide text-white/80 transition hover:bg-white/15 light:border-slate-200 light:bg-slate-100 light:text-slate-800 light:hover:bg-slate-200"
               >
                 Show explainer
               </button>
             )}
+
             <div
               className="pointer-events-none absolute inset-0"
               style={{
@@ -1137,9 +1102,7 @@ export default function SensorFusionPage() {
 
               {vehicles.map((v) => {
                 const pos = nodePointFromEdges(v, edges);
-                const edge = edges.find(
-                  (ed) => (ed.a === v.nodeFrom && ed.b === v.nodeTo) || (ed.a === v.nodeTo && ed.b === v.nodeFrom),
-                );
+                const edge = edges.find((ed) => (ed.a === v.nodeFrom && ed.b === v.nodeTo) || (ed.a === v.nodeTo && ed.b === v.nodeFrom));
                 if (!edge) return null;
                 const a = v.nodeFrom === edge.a ? Math.max(v.t - 0.02, 0) : Math.min(1 - v.t + 0.02, 1);
                 const b = v.nodeFrom === edge.a ? Math.min(v.t + 0.02, 1) : Math.max(1 - v.t - 0.02, 0);
@@ -1182,29 +1145,29 @@ export default function SensorFusionPage() {
 
           <Legend />
 
-          <div className="card-glass grid gap-3 p-4 sm:grid-cols-3">
-            <div className="rounded-xl bg-white/5 p-3">
-              <div className="text-xs uppercase tracking-wide text-white/60">Vision</div>
-              <div className="mt-1 text-lg font-semibold text-white">
+          <div className="card-glass grid gap-3 p-4 sm:grid-cols-3 bg-slate-950/80 border-slate-800/60 light:bg-white light:border-slate-200">
+            <div className="rounded-xl bg-white/5 p-3 light:bg-slate-100">
+              <div className="text-xs uppercase tracking-wide text-white/60 light:text-slate-600">Vision</div>
+              <div className="mt-1 text-lg font-semibold text-white light:text-slate-900">
                 {latestVision ? `${Math.round(latestVision.conf * 100)}%` : "--"}
               </div>
-              <div className="text-xs text-white/50">
+              <div className="text-xs text-white/50 light:text-slate-600">
                 {visionEnabled ? "Buffered 2s stream" : "Sensor disabled"}
               </div>
             </div>
-            <div className="rounded-xl bg-white/5 p-3">
-              <div className="text-xs uppercase tracking-wide text-white/60">IMU peak</div>
-              <div className="mt-1 text-lg font-semibold text-white">
+            <div className="rounded-xl bg-white/5 p-3 light:bg-slate-100">
+              <div className="text-xs uppercase tracking-wide text-white/60 light:text-slate-600">IMU peak</div>
+              <div className="mt-1 text-lg font-semibold text-white light:text-slate-900">
                 {imuEnabled ? imuFeaturesState.peak.toFixed(2) : "0"}
               </div>
-              <div className="text-xs text-white/50">Impulse {imuFeaturesState.impulse.toFixed(2)}</div>
+              <div className="text-xs text-white/50 light:text-slate-600">Impulse {imuFeaturesState.impulse.toFixed(2)}</div>
             </div>
-            <div className="rounded-xl bg-white/5 p-3">
-              <div className="text-xs uppercase tracking-wide text-white/60">Audio</div>
-              <div className="mt-1 text-lg font-semibold text-white">
+            <div className="rounded-xl bg-white/5 p-3 light:bg-slate-100">
+              <div className="text-xs uppercase tracking-wide text-white/60 light:text-slate-600">Audio</div>
+              <div className="mt-1 text-lg font-semibold text-white light:text-slate-900">
                 {audioEnabled && audioFeature ? audioFeature.energy.toFixed(2) : "0"}
               </div>
-              <div className="text-xs text-white/50">
+              <div className="text-xs text-white/50 light:text-slate-600">
                 {audioEnabled ? `Screech ${audioFeature ? audioFeature.screech.toFixed(2) : "0"}` : "Sensor disabled"}
               </div>
             </div>
@@ -1212,31 +1175,31 @@ export default function SensorFusionPage() {
         </div>
 
         <div className="space-y-4">
-          <div className="card-glass p-4">
-            <div className="mb-2 flex items-center justify-between text-sm text-white/70">
+          <div className="card-glass p-4 bg-slate-950/80 border-slate-800/60 light:bg-white light:border-slate-200">
+            <div className="mb-2 flex items-center justify-between text-sm text-white/70 light:text-slate-700">
               <span>Fusion HUD</span>
-              <span className="text-xs text-white/50">
+              <span className="text-xs text-white/50 light:text-slate-500">
                 {fusionHud.edgeId ? `Edge ${fusionHud.edgeId}` : "Idle"}
               </span>
             </div>
             <div className="flex items-end gap-6">
               <div>
-                <div className="text-xs uppercase text-white/50">Probability</div>
-                <div className="text-3xl font-semibold text-white">
+                <div className="text-xs uppercase text-white/50 light:text-slate-500">Probability</div>
+                <div className="text-3xl font-semibold text-white light:text-slate-900">
                   {fusionHud.hazardProb.toFixed(2)}
                 </div>
               </div>
               <div>
-                <div className="text-xs uppercase text-white/50">Severity</div>
-                <div className="text-3xl font-semibold text-white">
+                <div className="text-xs uppercase text-white/50 light:text-slate-500">Severity</div>
+                <div className="text-3xl font-semibold text-white light:text-slate-900">
                   {fusionHud.severity.toFixed(2)}
                 </div>
               </div>
-              <div className="ml-auto rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/80">
+              <div className="ml-auto rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/80 light:bg-slate-100 light:text-slate-800">
                 {fusionHud.source === "none" ? "waiting" : fusionHud.source}
               </div>
             </div>
-            <div className="mt-3 h-2 rounded-full bg-white/10">
+            <div className="mt-3 h-2 rounded-full bg-white/10 light:bg-slate-200">
               <div
                 className="h-2 rounded-full bg-emerald-400"
                 style={{ width: `${Math.round(fusionHud.hazardProb * 100)}%` }}
@@ -1244,10 +1207,10 @@ export default function SensorFusionPage() {
             </div>
           </div>
 
-          <div className="card-glass space-y-3 p-4">
-            <div className="flex items-center justify-between text-sm text-white/70">
+          <div className="card-glass space-y-3 p-4 bg-slate-950/80 border-slate-800/60 light:bg-white light:border-slate-200">
+            <div className="flex items-center justify-between text-sm text-white/70 light:text-slate-700">
               <span>Sensors</span>
-              <span className="text-xs text-white/50">Noise {noiseLevel.toFixed(2)}</span>
+              <span className="text-xs text-white/50 light:text-slate-500">Noise {noiseLevel.toFixed(2)}</span>
             </div>
             <div className="flex flex-wrap gap-2">
               <ToggleChip label="Vision" active={visionEnabled} onClick={toggleVision} />
@@ -1263,13 +1226,13 @@ export default function SensorFusionPage() {
               onChange={(e) => setNoiseLevel(Number(e.target.value))}
               className="block w-full accent-emerald-400"
             />
-            <div className="text-xs text-white/50">
+            <div className="text-xs text-white/50 light:text-slate-600">
               Higher noise adds IMU jitter and reduces vision confidence to stress the fusion logic.
             </div>
           </div>
 
-          <div className="card-glass p-4">
-            <div className="mb-2 text-sm text-white/70">Vertical acceleration (raw vs α-β filtered)</div>
+          <div className="card-glass p-4 bg-slate-950/80 border-slate-800/60 light:bg-white light:border-slate-200">
+            <div className="mb-2 text-sm text-white/70 light:text-slate-700">Vertical acceleration (raw vs α-β filtered)</div>
             <div className="h-48">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={imuSeries} margin={{ left: 0, right: 0, top: 4, bottom: 0 }}>
@@ -1299,18 +1262,18 @@ export default function SensorFusionPage() {
             </div>
           </div>
 
-          <div className="card-glass max-h-[420px] overflow-auto p-4">
+          <div className="card-glass max-h-[420px] overflow-auto p-4 bg-slate-950/80 border-slate-800/60 light:bg-white light:border-slate-200">
             <div className="mb-2 flex items-center justify-between">
-              <span className="text-sm text-white/70">Console</span>
+              <span className="text-sm text-white/70 light:text-slate-700">Console</span>
               <button
                 onClick={() => setFeed([])}
-                className="rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-xs text-white/70 hover:bg-white/10"
+                className="rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-xs text-white/70 hover:bg-white/10 light:border-slate-200 light:bg-slate-100 light:text-slate-800 light:hover:bg-slate-200"
               >
                 Clear
               </button>
             </div>
-            <ul className="space-y-1 text-sm text-white/85">
-              {feed.length === 0 && <li className="text-white/50">No events yet. Start the sim and spawn a hazard.</li>}
+            <ul className="space-y-1 text-sm text-white/85 light:text-slate-800">
+              {feed.length === 0 && <li className="text-white/50 light:text-slate-500">No events yet. Start the sim and spawn a hazard.</li>}
               {feed.map((entry, idx) => (
                 <li key={idx} className="font-mono text-xs" dangerouslySetInnerHTML={{ __html: entry }} />
               ))}
