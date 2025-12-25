@@ -1,6 +1,6 @@
-import { redirect } from "next/navigation";
+import SandboxShell from "./SandboxShell";
 
 export default function SandboxIndex() {
-  // Redirect to a default demo page — change this if you prefer a different default
-  redirect("/sandbox/v2x");
+  // Default landing demo; can be changed to "aegis" or any other key from NAV.
+  return <SandboxShell initialTab="v2x" />;
 }

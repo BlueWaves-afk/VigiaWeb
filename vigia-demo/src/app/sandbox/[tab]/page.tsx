@@ -1,10 +1,9 @@
 import SandboxShell from "../SandboxShell";
 
 interface Props {
-  params: { tab: string } | Promise<{ tab: string }>;
+  params: { tab: string };
 }
 
-export default async function Page({ params }: Props) {
-  const p = await params;
-  return <SandboxShell initialTab={p.tab} />;
+export default function Page({ params }: Props) {
+  return <SandboxShell initialTab={params.tab} />;
 }
