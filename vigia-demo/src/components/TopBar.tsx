@@ -10,6 +10,7 @@ type NavLink = { href: string; label: string };
 type DropdownItem = { href: string; label: string; description: string };
 
 const LINKS: NavLink[] = [
+  { href: "/download", label: "Download" }, // ✅ ADDED
   { href: "/pricing", label: "Pricing" },
   { href: "/docs", label: "Docs" },
 ];
@@ -35,8 +36,6 @@ export default function TopBar() {
 
   const mobileRef = useRef<HTMLDivElement | null>(null);
   const resourcesRef = useRef<HTMLDivElement | null>(null);
-
-  /* ---------------- Effects ---------------- */
 
   useEffect(() => {
     setMobileOpen(false);
@@ -67,8 +66,6 @@ export default function TopBar() {
     return () => document.removeEventListener("keydown", handleEscape);
   }, []);
 
-  /* ---------------- CTA Logic ---------------- */
-
   const handleStart = useCallback(() => {
     if (loading) return;
     if (!profile) return router.push("/auth/signin");
@@ -79,18 +76,15 @@ export default function TopBar() {
     router.push("/dashboard");
   }, [router, pathname, profile, loading]);
 
-  /* ---------------- Render ---------------- */
-
   return (
     <header className="fixed inset-x-0 top-0 z-[9999]">
       {/* Top Banner */}
       <Link
         href="/sandbox"
-        className="group block w-full bg-black/90 backdrop-blur-sm border-b border-slate-800 py-2.5 text-center text-sm text-slate-300 transition-colors hover:text-white"
+        className="group block w-full bg-black/90 backdrop-blur-sm border-b border-slate-800 py-2.5 text-center text-sm text-slate-300 hover:text-white"
       >
-        Try our{" "}
-        <span className="font-semibold text-cyan-400">Sandbox</span>
-        <span className="inline-block ml-1 transition-transform group-hover:translate-x-0.5">→</span>
+        Try our <span className="font-semibold text-cyan-400">Sandbox</span>
+        <span className="ml-1 inline-block transition-transform group-hover:translate-x-0.5">→</span>
       </Link>
 
       {/* Main Nav */}
@@ -102,13 +96,13 @@ export default function TopBar() {
               VIGIA
             </Link>
 
-            {/* Desktop Nav */}
+            {/* Desktop */}
             <div className="hidden md:flex items-center gap-8">
               {/* Resources */}
               <div className="relative" ref={resourcesRef}>
                 <button
-                  onClick={() => setResourcesOpen((v) => !v)}
-                  className="flex items-center gap-1 text-sm font-medium text-slate-400 transition-colors hover:text-white"
+                  onClick={() => setResourcesOpen(v => !v)}
+                  className="flex items-center gap-1 text-sm font-medium text-slate-400 hover:text-white"
                 >
                   Resources
                   <svg
@@ -124,31 +118,22 @@ export default function TopBar() {
                 {resourcesOpen && (
                   <div className="absolute right-0 top-full mt-3 w-[520px] rounded-xl border border-slate-800 bg-slate-950 shadow-2xl">
                     <div className="p-2">
-                      <Link
-                        href="/sandbox"
-                        onClick={() => setResourcesOpen(false)}
-                        className="block rounded-lg px-4 py-3 hover:bg-slate-900"
-                      >
+                      <Link href="/sandbox" className="block rounded-lg px-4 py-3 hover:bg-slate-900">
                         <div className="font-semibold text-white">Sandbox</div>
-                        <div className="mt-0.5 text-sm text-slate-400">
-                          Try live demos and simulations
-                        </div>
+                        <div className="text-sm text-slate-400">Try live demos and simulations</div>
                       </Link>
 
                       <div className="my-2 h-px bg-slate-800" />
 
                       <div className="grid grid-cols-2 gap-1">
-                        {SANDBOX_ITEMS.map((item) => (
+                        {SANDBOX_ITEMS.map(item => (
                           <Link
                             key={item.href}
                             href={item.href}
-                            onClick={() => setResourcesOpen(false)}
                             className="block rounded-lg px-4 py-2.5 hover:bg-slate-900"
                           >
                             <div className="text-sm font-medium text-white">{item.label}</div>
-                            <div className="mt-0.5 text-xs text-slate-500">
-                              {item.description}
-                            </div>
+                            <div className="text-xs text-slate-500">{item.description}</div>
                           </Link>
                         ))}
                       </div>
@@ -162,7 +147,7 @@ export default function TopBar() {
                 <Link
                   key={href}
                   href={href}
-                  className={`text-sm font-medium transition-colors ${
+                  className={`text-sm font-medium ${
                     pathname.startsWith(href)
                       ? "text-white"
                       : "text-slate-400 hover:text-white"
@@ -172,30 +157,21 @@ export default function TopBar() {
                 </Link>
               ))}
 
-              <Link href="/careers" className="text-sm font-medium text-slate-400 hover:text-white">
-                Careers
-              </Link>
-
-              <Link href="/enterprise" className="text-sm font-medium text-slate-400 hover:text-white">
-                Enterprise
-              </Link>
-
               <ThemeToggle />
 
               <button
                 onClick={handleStart}
                 disabled={loading}
-                className="rounded-full bg-cyan-500 px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-cyan-600 disabled:opacity-50"
+                className="rounded-full bg-cyan-500 px-5 py-2 text-sm font-semibold text-white hover:bg-cyan-600 disabled:opacity-50"
               >
                 {loading ? "Loading..." : "Dashboard"}
               </button>
             </div>
 
-            {/* Mobile Button */}
+            {/* Mobile */}
             <button
-              onClick={() => setMobileOpen((v) => !v)}
+              onClick={() => setMobileOpen(v => !v)}
               className="md:hidden p-2 text-slate-400 hover:text-white"
-              aria-label="Menu"
             >
               <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 {mobileOpen ? (
@@ -211,49 +187,21 @@ export default function TopBar() {
         {/* Mobile Menu */}
         {mobileOpen && (
           <>
-            <div
-              className="md:hidden fixed inset-0 bg-black/60 backdrop-blur-sm"
-              onClick={() => setMobileOpen(false)}
-            />
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" />
             <div
               ref={mobileRef}
-              className="md:hidden absolute left-4 right-4 top-full mt-2 rounded-2xl border border-slate-800 bg-slate-950 p-4 shadow-2xl"
+              className="absolute left-4 right-4 top-full mt-2 rounded-2xl border border-slate-800 bg-slate-950 p-4 shadow-2xl"
             >
-              <div className="space-y-2">
+              {[...LINKS].map(({ href, label }) => (
                 <Link
-                  href="/sandbox"
+                  key={href}
+                  href={href}
                   onClick={() => setMobileOpen(false)}
-                  className="block rounded-xl bg-slate-900 px-4 py-3 font-medium text-white hover:bg-slate-800"
+                  className="block rounded-xl px-4 py-3 text-slate-300 hover:bg-slate-900 hover:text-white"
                 >
-                  Sandbox
+                  {label}
                 </Link>
-
-                {[...LINKS, { href: "/careers", label: "Careers" }, { href: "/enterprise", label: "Enterprise" }].map(
-                  ({ href, label }) => (
-                    <Link
-                      key={href}
-                      href={href}
-                      onClick={() => setMobileOpen(false)}
-                      className="block rounded-xl px-4 py-3 font-medium text-slate-300 hover:bg-slate-900 hover:text-white"
-                    >
-                      {label}
-                    </Link>
-                  )
-                )}
-              </div>
-
-              <div className="mt-4 pt-4 border-t border-slate-800">
-                <button
-                  onClick={() => {
-                    setMobileOpen(false);
-                    handleStart();
-                  }}
-                  disabled={loading}
-                  className="w-full rounded-full bg-cyan-500 px-4 py-3 font-semibold text-white hover:bg-cyan-600 disabled:opacity-50"
-                >
-                  {loading ? "Loading..." : "Open Dashboard"}
-                </button>
-              </div>
+              ))}
             </div>
           </>
         )}
